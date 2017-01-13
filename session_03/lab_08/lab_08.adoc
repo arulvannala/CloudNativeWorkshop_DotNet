@@ -1,0 +1,1 @@
+= Lab 8 - Using MySql Connector from a .NET application

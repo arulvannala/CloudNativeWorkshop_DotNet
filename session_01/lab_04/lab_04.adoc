@@ -3,7 +3,7 @@
 [abstract]
 --
 Pivotal Cloud Foundry makes the work of performing actions, such as managing logs, doing a zero-downtime deploy, and managing application health very easy.
-In the this labs we'll explore some of these capabilities.
+In this lab we'll explore some of these capabilities.
 --
 
 == Tailing Application Logs
@@ -58,9 +58,9 @@ Connected, dumping recent logs for app env in org instructor / space development
 ====
 +
 As you can see, Cloud Foundry's log aggregation components capture both application logs and CF component logs relevant to your application.
-These events are properly interleaved based on time, giving you an accurate picture of events as they transpired across the system.  In this case we output Kaboom when the kill button is pressed in the .NET app
+These events are properly interleaved based on time, giving you an accurate picture of events as they transpired across the system.  In this case we output Kaboom when the `Kill App` menu item is pressed in the .NET app
 
-. To get a running ``tail'' of the application logs rather than a dump, simply type:
+. To get a running ``tail`` of the application logs rather than a dump, simply type:
 +
 ----
 > cf logs env
@@ -78,11 +78,11 @@ Cloud Foundry's https://docs.pivotal.io/pivotalcf/1-7/concepts/architecture/#nsy
 > cf logs env
 ----
 
-. If you do not have more than one application instance running, execute the scale command to scale to 2 or more application instances.  Visit the application in the browser, and click on the ``Kill Switch'' button. This button will trigger an Environment.Exit(-1) causing the Health Manager to observe an application instance crash:
+. If you do not have more than one application instance running, execute the scale command to scale to 2 or more application instances.  Visit the application in the browser, and click on the ``Kill App`` menu item. This menu item will trigger an Environment.Exit(-1) causing the Health Manager to observe an application instance crash:
 +
 image::../../Common/images/lab-kill-button.png[]
 
-. After clicking the kill switch a couple of interesting things should happen.
+. After clicking the ``Kill App`` menu item a couple of interesting things should happen.
 First, you'll see an error code returned in the browser, as the request you submitted never returns a response:
 +
 image::../../Common/images/lab-kill-failed.png[]

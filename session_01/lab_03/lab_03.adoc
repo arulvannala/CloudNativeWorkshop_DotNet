@@ -67,12 +67,13 @@ buildpack: binary_buildpack
 
 ----
 
-. Revisit the application route in the browser.
+. Revisit the application route in the browser and select the CloudFoundry Config menu item.
 Refresh several times.
 You should observe the instance index changing as you do so:
 +
 image::../../Common/images/lab-scale-up.png[]
-+
+{sp}+
+{sp}+
 The aforementioned https://docs.pivotal.io/pivotalcf/1-7/concepts/architecture/router.html[(Go)Router] is applying a random routing algorithm to all of the application instances assigned to this route.
 As an instance reaches the `running` state, its https://docs.pivotal.io/pivotalcf/1-8/concepts/diego/diego-architecture.html#architecture[Diego] Cell registers that instance in the routing table assigned to its route by sending a message to Cloud Foundry's message bus.
 All (Go)Router instances are subscribed to this channel and register the routes independently.
@@ -149,8 +150,6 @@ image::../../Common/images/lab-routes.png[]
 image::../../Common/images/lab-add-route.png[]
 
 . Navigate to the new URL in your browser window.  You should see that same application displayed!
-+
-image::../../Common/images/lab-new-route.png[]
 
 . We can just as easily remove a route by clicking on _Unmap_ on the route you wish to remove.
 +
