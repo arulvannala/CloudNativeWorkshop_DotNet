@@ -243,5 +243,3 @@ Note the application name for next steps
 ----
 > cf delete env
 ----
-
-== Understanding the Code

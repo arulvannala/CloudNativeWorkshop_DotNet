@@ -1,174 +1,207 @@
-= Lab 6 - Managing application logs from a .NET application
+= Lab 6 - Understanding Fortune Teller and ASP.NET Core Dependency Injection
 
 [abstract]
 --
-In this lab we will continue adding on to our Attendees ASP.NET application by using log4net to log information to the console (stdout/stderr)
+Starting with this lab we will begin creating a fully functional Fortune Teller application which uses several of the Steeltoe components.
+You have two paths you can follow when doing the rest of the labs for the workshop:
+
+. For each lab, open up and work with finished lab code. With this path, you won't be writing any new code, you will just be reviewing and running already completed lab code.
+. Open the FortuneTeller solution as the starting project and begin adding code for each of the labs. With this path, you will be writing new code and debugging what you write.
+
+The goals for Lab 6 is to understand ASP.NET Core dependency injection and to use it to wire up two areas of the code:
+
+. For the Fortune Teller Service:
+.. We need to wire up the ``IFortuneRepository`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``FortuneRepository``
+.. We need to add the ``IFortuneRepository`` and the ``FortuneContext`` to the service container.
+.. Initialize the ``FortuneContext`` with some Fortunes.
+. For the Fortune Teller UI:
+.. We need to wire up the ``IFortuneService`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``IFortuneService``.
+.. We need to add the ``IFortuneService`` to the service container.
 --
 
-== Building upon our Attendees Application
+== Open VS2015 Solution
+. Start VS2015 and open the solution you wish to start from:
+.. _Workshop/Session-02/Lab06.sln_ if you want to start with finished code.
+.. _Workshop/FortuneTeller/FortuneTeller.sln_ if you will be writing code from scratch.
 
-=== Configuring log4net
+=== Understanding Fortune-Teller-Service project
+. Expand the Fortune-Teller-Service project
+. Open and examine ``Program.cs``, as everything starts in here.
+.. Examine the usage of ``WebHostBuilder``, ``UseKestrel``, ``UseUrls``, ``UseStartup<Startup>``.
+. Open and examine ``Startup.cs`` as this is where the app is configured.
+.. Examine the ``Startup`` constructor, where the apps configuration is read and created.
+.. Examine the ``ConfigureService()`` method, where the services are added to the DI container.
+.. Examine the ``Configure()`` method, where middleware is added to the request processing pipeline.
+. Open the ``Models`` folder which holds the code for the ``IFortuneRepository``
+.. Examine ``IFortuneRepository``
+.. Examine ``FortuneRepository``, the implementation and notice it uses a ``FortuneContext``
+.. Examine ``FortuneContext``, notice it is a context based on ``EntityFrameworkCore``
+... Notice it stores ``FortuneEntity``
+.. Examine ``SampleData`` and notice ``InitializeFortunesAsync`` method which adds sample data to the ``FortuneContext``
+. Open the ``Controllers`` folder which holds the MVC Controller code
+.. Open the ``FortunesController``, the implementation for the Rest API exposed by this microservice
+.. Notice it implments the ``IFortuneService`` which provides the two endpoints
+... AllFortunesAsync() ->  GET: api/fortunes/all
+... RandomFortuneAsync() -> GET api/fortunes/random
+.. Notice the controller methods return hard-coded ``Fortunes``, not ``FortuneEntitys``.
 
-1. Right click on the Project name and select Manage NuGet Packages
-2. Click the browse link 
-3. Search for log4net
-4. Select the log4net by Apache Software Foundation (v2.0.5) and click the Install Button. 
-    a. Click Ok to accept the Changes and confirm the packages is marked as installed (green tick)
+=== Understanding Fortune-Teller-UI project
+. Expand the Fortune-Teller-UI project
+. Open and examine ``Program.cs``, as everything starts in here.
+.. Examine the usage of ``WebHostBuilder``, ``UseKestrel``, ``UseUrls``, ``UseStartup<Startup>``.
+. Open and examine ``Startup.cs`` as this is where the app is configured.
+.. Examine the ``Startup`` constructor, where the apps configuration is read and created.
+.. Examine the ``ConfigureService()`` method, where the services are added to the DI container.
+.. Examine the ``Configure()`` method, where middleware is added to the request processing pipeline.
+. Open the ``Common/Services`` folder which holds the code for the ``IFortuneService``
+.. Examine ``IFortuneService``
+.. Examine ``FortuneServiceClient``, the implementation and notice it returns hard-coded ``Fortunes``
+. Open the ``Controllers`` folder which holds the MVC Controller code
+.. Open the ``FortunesController``, the implementation for the UI
+.. Notice the ``RandomFortune`` action, it returns a ``Fortune`` to the View
+. Open the ``Views/Fortunes`` folder which holds the Views for the FortuneController
+.. Open ``RandomFortune``, the View used by the ``RandomFortune`` action
+... Notice how it uses the ``Fortune`` returned from the action
+
+=== Modify Fortune Teller Service
+
+==== Step 01 - Modify FortuneController to use the IFortuneRepository
+. To get the ``IFortuneRepository`` into the controller we need to add a constructor to the ``FortuneController``:
 +
-image::../../Common/images/lab-log4net-nuget.png[]
-+
-5. In the Solutions Explorer click on Properties and open the AssemblyInfo.cs
-    a. Add the following code at the bottom of this file:  
-
-        [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
-
-    b. Save the AssemblyInfo.cs file
-6. In the Solutions Explorer right click the solution and add a new text file with name "log4net.config"
-    a. Add the following content to the file:
-
-        <?xml version="1.0" encoding="utf-8" ?>
-          <log4net>
-            <root>
-              <level value="ALL" />
-              <appender-ref ref="MyAppender" />
-            </root>
-            <appender name="MyAppender" type="log4net.Appender.ConsoleAppender">
-              <layout type="log4net.Layout.PatternLayout">
-                <conversionPattern value="%date %level %logger - %message%newline" />
-              </layout>
-            </appender>
-          </log4net>
-        
-  b. Save the log4net.config file
-
-
-=== Using log4net 
-
-1. In the Controllers folder open the HomeController.cs
-    a. Add the following class member field:
-
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(HomeController));
-
-    b. Add as many log entries as desired in the class methods. For example:
-
-        public ActionResult Index()
+----
+        private IFortuneRepository _fortunes;
+        public FortunesController(IFortuneRepository fortunes)
         {
-            log.Info("Action Index has been fired.");
-            return View();
+            _fortunes = fortunes;
         }
-        
-    c. Save the HomeController.cs file
-
-
-=== Publishing and Pushing the .NET Application
-
-1. Publish the .NET applicaiton by right-clicking on the project name and selecting publish. Use the same profile as was used before.
-    a. Note: If you have changed namespaces or made changes to the assembly name, be sure you delete any files prior to publishing. If you do, be sure to back up the manifest.yml file.
-
-2. If you haven't already, set the API target for the CLI: (set appropriate end point for your environment)
+----
+. Then to get ``FortuneController`` to use the ``IFortuneRepository`` we have to modify both contoller actions.
+Something like below should work, but feel free to write your own code:
 +
 ----
-> cf api https://api.run.haas-76.pez.pivotal.io --skip-ssl-validation
+        // GET: api/fortunes/all
+        [HttpGet("all")]
+        public async Task<List<Fortune>> AllFortunesAsync()
+        {
+            var entities = await _fortunes.GetAllAsync();
+            var result = new List<Fortune>();
+            foreach(var entity in entities)
+            {
+                result.Add(new Fortune() { Id = entity.Id, Text = entity.Text });
+            }
+            return result;
+        }
+        // GET api/fortunes/random
+        [HttpGet("random")]
+        public async Task<Fortune> RandomFortuneAsync()
+        {
+            var entity = await _fortunes.RandomFortuneAsync();
+            return new Fortune() { Id = entity.Id, Text = entity.Text };
+        }
 ----
-and login to Pivotal Cloudfoundry:
+==== Step 02 - Add IFortuneRepository and FortuneContext to Service Container
+. To get the ``IFortuneRepository`` into the service container we need to modify the ``Startup`` class method ``ConfigureServices`` and add ``IFortuneRepository`` as a Singleton created from its implementation ``FortuneRepository``.
 +
 ----
-> cf login
+        public void ConfigureServices(IServiceCollection services)
+        {
+            .....
+
+            services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+            // Add framework services.
+            services.AddMvc();
+        }
 ----
-+
-Follow the prompts.
-
-4. Change to the folder containing the published code files and manifest.yml (Replace "[Publish-Target-Location-folder]" with the actual folder name: 
-+
-----
-> cd [Publish-Target-Location-folder]
-----
-
-5. Push the application!
-+
-----
-> cf push
-----
-+
-You should see output similar to the following listing. Take a look at the listing callouts for a play-by-play of what's happening:
-+
-----
-> cf push
-Using manifest file C:\Users\admin\Documents\Published\PCFDeploy\manifest.yml
-
-Using stack windows2012R2...
-OK
-Updating app wsattendees in org instructor / space development as admin...
-OK
-
-Using route wsattendees-jga.cfapps.haas-76.pez.pivotal.io
-Uploading wsattendees...
-Uploading app files from: C:\Users\admin\Documents\Published\PCFDeploy
-Uploading 722.3K, 45 files
-Done uploading
-OK
-
-Starting app wsattendees in org instructor / space development as admin...
-Downloading binary_buildpack...
-Creating container
-Downloaded binary_buildpack (8.3K)
-Successfully created container
-Downloading app package...
-Downloaded app package (5.7M)
-Downloading build artifacts cache...
-Downloaded build artifacts cache (111B)
-Staging...
-Exit status 0
-Uploading build artifacts cache...
-Staging complete
-Uploading droplet, build artifacts cache...
-Uploading droplet...
-Uploaded build artifacts cache (130B)
-Uploaded droplet (5.7M)
-Uploading complete
-
-0 of 1 instances running, 1 starting
-0 of 1 instances running, 1 starting
-0 of 1 instances running, 1 starting
-1 of 1 instances running
-
-App started
-
-
-OK
-
-App wsattendees was started using this command `..\tmp\lifecycle\WebAppServer.exe`
-
-Showing health and status for app wsattendees in org instructor / space development as admin...
-OK
-
-requested state: started
-instances: 1/1
-usage: 512M x 1 instances
-urls: wsattendees-jga.cfapps.haas-76.pez.pivotal.io
-last uploaded: Tue Oct 18 18:57:27 UTC 2016
-stack: windows2012R2
-buildpack: binary_buildpack
-
-     state     since                    cpu    memory         disk          details
-#0   running   2016-10-18 02:58:24 PM   0.0%   352M of 512M   19.8M of 1G
-
-----
-
-6. From the console tail the logs of your application
+. But notice that the ``FortuneRepository`` takes a ``FortuneContex``t as a argument to its constructor.
+So we also need to add a ``FortuneContext`` to the container.
+But ``FortuneContext`` is built using the EntityFrameworkCore so we also need to add it to the container as well.
+We do that with the ``AddEntityFramework()`` method below.
+Once these services are added, then we also need to configure the ``FortuneContext`` to use some backend database for storage.
+At this point in the lab, we will configure it to use an in-memory collection.
+In an upcoming lab, we will use Steeltoe connectors to connect it to a real database.
 +
 ----
-> cf logs wsattendees
-----
-+
-7. Visit the application in your browser by hitting the route that was diplayed by the CLI, and go to the sections of the app where you added log traces in the HomeController
-8. After a few clicks go back to the command prompt where you were tailing your logs and you should now see APP log traces with the information you put in the code
-+
-----
-2016-10-18T17:09:34.85-0400 [APP/0]      OUT 2016-10-18 14:09:34,853 INFO MVCAttendees2.Controllers.HomeController - Action Index has been fired.
-2016-10-18T17:09:53.28-0400 [RTR/0]      OUT wsattendees-jga.cfapps.haas-76.pez.pivotal.io - [18/10/2016:21:09:53.255 +0000] "GET / HTTP/1.1" 200 0 3103 "-" "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36" 10.193.145.250:51248 x_forwarded_for:"10.193.145.1" x_forwarded_proto:"http" vcap_request_id:7f250aca-c704-41d4-598c-b79ac163d9d1 response_time:0.028023432 app_id:194a50fc-e5f2-4389-b95a-1a4630b6375f
-2016-10-18T17:10:05.93-0400 [APP/0]      OUT 2016-10-18 14:10:05,935 INFO MVCAttendees2.Controllers.HomeController - Action Index has been fired.
-2016-10-18T17:10:08.09-0400 [RTR/0]      OUT wsattendees-jga.cfapps.haas-76.pez.pivotal.io - [18/10/2016:21:10:08.089 +0000] "GET / HTTP/1.1" 200 0 3103 "-" "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36" 10.193.145.250:51290 x_forwarded_for:"10.193.145.1" x_forwarded_proto:"http" vcap_request_id:1d13ed97-bcc2-45d4-6560-7872e8ba544f response_time:0.002827215 app_id:194a50fc-e5f2-4389-b95a-1a4630b6375f
+        public void ConfigureServices(IServiceCollection services)
+        {
+            .....
+            services.AddEntityFramework()
+                    .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
+            services.AddSingleton<IFortuneRepository, FortuneRepository>();
 
+            // Add framework services.
+            services.AddMvc();
+        }
 ----
+
+==== Step 03 - Initialize FortuneContext with some Fortunes
+. To add some Fortunes to the ``FortuneContext`` we have already written the code for you. You can make use of the static method ``SampleData.InitializeFortunesAsync()`` to do this.
+The question is, where do you add this? Have a look at the method and notice that the code asks the container for an instance of ``FortuneContext`` in order to initialize it with samples.
+As a result, the container needs to be built before we call this method and also before we start handling any requests.
+So the best place to add this call is in the ``Configure`` method in the ``Startup`` class.
++
+----
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+
+            app.UseMvc();
+
+            SampleData.InitializeFortunesAsync(app.ApplicationServices).Wait();
+        }
+----
+
+==== Run Locally
+. Using the skills you learned from Lab05, run the app from VS2015 and from the command line.
+.. CTRL-F5 or F5
+.. ``dotnet run --server.urls http://*:5000``
+
+==== Push to CloudFoundry
+. Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+=== Modify Fortune Teller UI
+
+==== Step 01 - Modify FortuneController to use the IFortuneService
+. To get the ``IFortuneService`` into the controller we need to add a constructor to the ``FortuneController``:
++
+----
+        private IFortuneService _fortunes;
+        public FortunesController(IFortuneService fortunes)
+        {
+            _fortunes = fortunes;
+        }
+----
+. Then to get ``FortuneController`` to use the ``IFortuneService`` we have to modify the contoller action:
++
+----
+        public async Task<IActionResult> RandomFortune()
+        {
+            var fortune = await _fortunes.RandomFortuneAsync();
+            return View(fortune);
+        }
+----
+
+==== Step 02 - Add IFortuneService to Service Container
+. To get the ``IFortuneService`` into the service container we need to modify the ``Startup`` class method ``ConfigureServices`` and add ``IFortuneService`` as a Singleton created from its implementation ``FortuneServiceClient``.
++
+----
+        public void ConfigureServices(IServiceCollection services)
+        {
+            .....
+            services.AddSingleton<IFortuneService, FortuneServiceClient>();
+            ....
+        }
+----
+
+==== Run Locally
+. Using the skills you learned from Lab05, run the app from VS2015 and from the command line.
+.. CTRL-F5 or F5
+.. ``dotnet run --server.urls http://*:5555``
+
+==== Push to CloudFoundry
+. Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
 
