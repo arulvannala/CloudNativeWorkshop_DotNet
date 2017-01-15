@@ -2,21 +2,32 @@
 
 [abstract]
 --
-Starting with this lab we will begin creating a fully functional Fortune Teller application which uses several of the Steeltoe components.
+Starting with this lab we will begin the process of creating a fully functional Fortune Teller application which uses several of the Steeltoe components.
 You have two paths you can follow when doing the rest of the labs for the workshop:
 
 . For each lab, open up and work with finished lab code. With this path, you won't be writing any new code, you will just be reviewing and running already completed lab code.
-. Open the FortuneTeller solution as the starting project and begin adding code for each of the labs. With this path, you will be writing new code and debugging what you write.
+. Open the _FortuneTeller.sln_ solution as the starting point and begin adding code for this lab and each of the remaining labs. With this path, you will be writing new code and debugging what you write.
 
-The goals for Lab 6 is to understand ASP.NET Core dependency injection and to use it to wire up two areas of the code:
+If you start with the _FortuneTeller.sln_, the app in its current state is not fully functional:
 
-. For the Fortune Teller Service:
-.. We need to wire up the ``IFortuneRepository`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``FortuneRepository``
-.. We need to add the ``IFortuneRepository`` and the ``FortuneContext`` to the service container.
+. The ``Fortune Teller Service`` only serves up a single Fortune.
+. The ``Fortune Teller UI`` doesn't know how to communicate with the ``Fortune Teller Service`` so it always services up a ``Hello world`` Fortune.
+
+The goals for Lab 6 are to understand ASP.NET Core dependency injection and use it to wire up two areas of the code:
+
+. Fortune Teller Service:
+.. Wire up the ``IFortuneRepository`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``FortuneRepository``
+.. Add the ``IFortuneRepository`` and the ``FortuneContext`` to the service container.
 .. Initialize the ``FortuneContext`` with some Fortunes.
-. For the Fortune Teller UI:
-.. We need to wire up the ``IFortuneService`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``IFortuneService``.
-.. We need to add the ``IFortuneService`` to the service container.
+. Fortune Teller UI:
+.. Wire up the ``IFortuneService`` to the ``FortuneController`` and modify the ``FortuneController`` to use the ``IFortuneService``.
+.. Add the ``IFortuneService`` to the service container.
+
+At the end of this lab, you will have an app that:
+
+. Has a ``Fortune Teller Service``  that uses a backend in-memory datastore to hold multiple ``Fortunes``.
+. Has a ``Fortune Teller Service`` that no longer serves up a single Fortune, but serves up random fortunes from the datastore.
+. Has a ``Fortune Teller UI`` that uses a stubbed out ``IFortuneService``.
 --
 
 == Open VS2015 Solution
@@ -69,49 +80,55 @@ The goals for Lab 6 is to understand ASP.NET Core dependency injection and to us
 . To get the ``IFortuneRepository`` into the controller we need to add a constructor to the ``FortuneController``:
 +
 ----
-        private IFortuneRepository _fortunes;
-        public FortunesController(IFortuneRepository fortunes)
-        {
-            _fortunes = fortunes;
-        }
+private IFortuneRepository _fortunes;
+public FortunesController(ILogger<FortunesController> logger, IFortuneRepository fortunes)
+{
+   _logger = logger;
+   _fortunes = fortunes;
+}
 ----
 . Then to get ``FortuneController`` to use the ``IFortuneRepository`` we have to modify both contoller actions.
 Something like below should work, but feel free to write your own code:
 +
 ----
-        // GET: api/fortunes/all
-        [HttpGet("all")]
-        public async Task<List<Fortune>> AllFortunesAsync()
-        {
-            var entities = await _fortunes.GetAllAsync();
-            var result = new List<Fortune>();
-            foreach(var entity in entities)
-            {
-                result.Add(new Fortune() { Id = entity.Id, Text = entity.Text });
-            }
-            return result;
-        }
-        // GET api/fortunes/random
-        [HttpGet("random")]
-        public async Task<Fortune> RandomFortuneAsync()
-        {
-            var entity = await _fortunes.RandomFortuneAsync();
-            return new Fortune() { Id = entity.Id, Text = entity.Text };
-        }
+// GET: api/fortunes/all
+[HttpGet("all")]
+public async Task<List<Fortune>> AllFortunesAsync()
+{
+     _logger?.LogDebug("AllFortunesAsync");
+
+    var entities = await _fortunes.GetAllAsync();
+    var result = new List<Fortune>();
+    foreach(var entity in entities)
+    {
+        result.Add(new Fortune() { Id = entity.Id, Text = entity.Text });
+    }
+    return result;
+}
+// GET api/fortunes/random
+[HttpGet("random")]
+public async Task<Fortune> RandomFortuneAsync()
+{
+    _logger?.LogDebug("RandomFortuneAsync");
+
+    var entity = await _fortunes.RandomFortuneAsync();
+    return new Fortune() { Id = entity.Id, Text = entity.Text };
+}
 ----
+
 ==== Step 02 - Add IFortuneRepository and FortuneContext to Service Container
 . To get the ``IFortuneRepository`` into the service container we need to modify the ``Startup`` class method ``ConfigureServices`` and add ``IFortuneRepository`` as a Singleton created from its implementation ``FortuneRepository``.
 +
 ----
-        public void ConfigureServices(IServiceCollection services)
-        {
-            .....
+public void ConfigureServices(IServiceCollection services)
+{
+    .....
 
-            services.AddSingleton<IFortuneRepository, FortuneRepository>();
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
 
-            // Add framework services.
-            services.AddMvc();
-        }
+    // Add framework services.
+    services.AddMvc();
+}
 ----
 . But notice that the ``FortuneRepository`` takes a ``FortuneContex``t as a argument to its constructor.
 So we also need to add a ``FortuneContext`` to the container.
@@ -122,16 +139,16 @@ At this point in the lab, we will configure it to use an in-memory collection.
 In an upcoming lab, we will use Steeltoe connectors to connect it to a real database.
 +
 ----
-        public void ConfigureServices(IServiceCollection services)
-        {
-            .....
-            services.AddEntityFramework()
-                    .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
-            services.AddSingleton<IFortuneRepository, FortuneRepository>();
+public void ConfigureServices(IServiceCollection services)
+{
+    .....
+    services.AddEntityFramework()
+            .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
 
-            // Add framework services.
-            services.AddMvc();
-        }
+    // Add framework services.
+    services.AddMvc();
+}
 ----
 
 ==== Step 03 - Initialize FortuneContext with some Fortunes
@@ -141,22 +158,22 @@ As a result, the container needs to be built before we call this method and also
 So the best place to add this call is in the ``Configure`` method in the ``Startup`` class.
 +
 ----
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-        {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+{
+    loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 
-            app.UseMvc();
+    app.UseMvc();
 
-            SampleData.InitializeFortunesAsync(app.ApplicationServices).Wait();
-        }
+    SampleData.InitializeFortunesAsync(app.ApplicationServices).Wait();
+}
 ----
 
-==== Run Locally
+==== Step 04 - Run Locally
 . Using the skills you learned from Lab05, run the app from VS2015 and from the command line.
 .. CTRL-F5 or F5
 .. ``dotnet run --server.urls http://*:5000``
 
-==== Push to CloudFoundry
+==== Step 05 - Push to Cloud Foundry
 . Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
@@ -167,40 +184,43 @@ So the best place to add this call is in the ``Configure`` method in the ``Start
 . To get the ``IFortuneService`` into the controller we need to add a constructor to the ``FortuneController``:
 +
 ----
-        private IFortuneService _fortunes;
-        public FortunesController(IFortuneService fortunes)
-        {
-            _fortunes = fortunes;
-        }
+private IFortuneService _fortunes;
+public FortunesController(ILogger<FortunesController>  logger, IFortuneService fortunes)
+{
+    _logger = logger;
+    _fortunes = fortunes;
+}
 ----
 . Then to get ``FortuneController`` to use the ``IFortuneService`` we have to modify the contoller action:
 +
 ----
-        public async Task<IActionResult> RandomFortune()
-        {
-            var fortune = await _fortunes.RandomFortuneAsync();
-            return View(fortune);
-        }
+public async Task<IActionResult> RandomFortune()
+{
+    _logger?.LogDebug("RandomFortune");
+
+    var fortune = await _fortunes.RandomFortuneAsync();
+    return View(fortune);
+}
 ----
 
 ==== Step 02 - Add IFortuneService to Service Container
 . To get the ``IFortuneService`` into the service container we need to modify the ``Startup`` class method ``ConfigureServices`` and add ``IFortuneService`` as a Singleton created from its implementation ``FortuneServiceClient``.
 +
 ----
-        public void ConfigureServices(IServiceCollection services)
-        {
-            .....
-            services.AddSingleton<IFortuneService, FortuneServiceClient>();
-            ....
-        }
+public void ConfigureServices(IServiceCollection services)
+{
+    .....
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    ....
+}
 ----
 
-==== Run Locally
+==== Step 03 - Run Locally
 . Using the skills you learned from Lab05, run the app from VS2015 and from the command line.
 .. CTRL-F5 or F5
 .. ``dotnet run --server.urls http://*:5555``
 
-==== Push to CloudFoundry
+==== Step 04 Push to Cloud Foundry
 . Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``

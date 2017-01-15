@@ -1,91 +1,427 @@
-= Lab 7 - Using Config Server from a .NET application
+= Lab 7 - Configuration and Spring Cloud Config Server
 
 [abstract]
 --
-In this lab we will push a .NET web application to cloud foundry and will bind it to a Config Server to read configuration from a distributed.
+In this lab we will continue to add functionality to the Fortune Teller application.
+We will explore how to use the ASP.NET Core Configuration services and how to add the Spring Cloud Config Server as a source of configuration data using the Steeltoe Config Server provider.
+
+If you started with the _FortuneTeller.sln_, and completed Lab06, the app in its current state is still not fully functional:
+
+. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold multiple ``Fortunes``.
+. The ``Fortune Teller Service`` serves up random fortunes from the datastore.
+. The ``Fortune Teller UI`` uses a ``FortuneServiceClient`` but it doesn't know how to communicate with the ``Fortune Teller Service`` yet.
+
+The goals for Lab 7 are to:
+
+. Understand ASP.NET Core Configuration services.
+. Understand ASP.NET Core Enironments
+. Understand ASP.NET Core Options services.
+. Use Environments to have seperate configurations for ``development`` and ``production``.
+. Use Options to configure the ``FortuneServiceClient``
+. Use Spring Cloud Config Server for centeralized configuration
+
+At the end of this lab, you will have an app that:
+
+. Uses different configurations for ``development`` and ``production``.
+. Uses Spring Cloud Config Server for centralized configuration
+. Has a ``FortuneServiceClient`` that can be configured from configuration data, and actually calls the ``Fortune Teller Service`` to get Fortunes.
 --
 
-== Download code
+== Open VS2015 Solution
+. Start VS2015 and open the solution you wish to use:
+.. _Workshop/Session-03/Lab07.sln_ if you want to start with finished code.
+.. _Workshop/FortuneTeller/FortuneTeller.sln_ if you are writing code from scratch.
 
-. Download and clone the git repo (dev branch) in Visual Studio, if you have the command line tool installed, or you can click 'Download ZIP' on the right side of the page https://github.com/SteeltoeOSS/Samples[here]
+== Understanding ASP.NET Core Configuration, Environment and Options services
+. Expand the Fortune-Teller-UI project
+. Open and examine ``Startup.cs``, as this is where the configuration is built
+.. Examine ``ConfigurationBuilder`` and ``SetBasePath``
+.. Examine ``AddJsonFile()`` methods.  These are adding Configuration sources to the ``ConfigurationBuilder``.
+... Notice the  ``AddEnvironmentVariables()``as another provider added to builder.
+... Explain Environments (e.g. development, staging, etc) and ``IHostingEnvironment.EnvironmentName``
+... Explain setting Environment using ``ASPNETCORE_ENVIRONMENT`` and point out ``launchSettings.json``
+.. Notice the arguments to ``AddJsonFile``
+.. Notice ``appsettings-<<EnvironmentName>>.json`` is not present.
+.. Notice ``Configuration = builder.Build()``. It actually builds the configuration at this point.
+... Explain how one providers configuration values can override the others.
+.. Open ``appsettings.json``. Current contents is used to configuring logging.
+... Notice ``loggerFactory.AddConsole()`` in ``Configure`` method.
+
+== Use different configurations for development and production.
+In this exercise we will be creating a ``appsettings-development.json`` file that will hold the configuration data for when we are running in development mode.
+
+=== Step 01 - Add appsettings-development.json configuration source
+Here we add a JSON configuration file to each project which contains configuration parameters specific to when we are running in development mode.
+Basically, we are going to change all logging to ``Debug`` when running the app in development mode.
+
+. Expand the Fortune-Teller-UI project
+.. Add new json file ``appsettings-development.json``.
+.. Copy contents of ``appsettings.json`` to ``appsetttings-development.json``.
+.. Modify all ``LogLevels`` to ``Debug``.
+.. Then also add ``"Fortune_Teller_Service": "Debug"`` and ``"Fortune_Teller_UI": "Debug"`` to end of the file.
+. Expand Fortune-Teller-Service project
+.. Do the same steps as above.
+. Save all files and when your done both projects ``appsettings-development.json`` files should look like:
+
 +
 ----
-> git clone -b dev https://github.com/SteeltoeOSS/Samples
+{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Debug",
+      "Microsoft": "Debug",
+      "Fortune_Teller_Service": "Debug"
+      "Fortune_Teller_UI": "Debug"
+    }
+  }
+}
 ----
 
-== Target
+=== Step 02 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test:
 
-1. If you haven't already, set the API target for the CLI: (set appropriate end point for your environment)
+. Using the skills you learned from Lab05, run the apps from VS2015 and from the command line.
+. Modify ``ASPNETCORE_ENVIRONMENT`` in ``launchsettings.json`` for each project and verify you are getting the appropriate logging information when you run the application.
+.. Hint: Amoung other places, look at the ``FortunesController`` action methods for logging calls.
+. Change the levels in  ``appsettings-development.json`` while ``Fortune-Teller-Service`` and ``Fortune-Teller-UI`` are running to see if changes are picked up.
+
+== Use Configuration & Options to configure the FortuneServiceClient
+In this exercise we will be using the ASP.NET Core Configuration and Options services to inject configuration into the ``FortuneServiceClient``.
+The configuration data will be put in the Fortune-Teller-UIs ``appsettings.json`` file, as that's what uses the service.
+We will use the ``FortuneServiceConfig`` class to hold the config data from ``appsettings.json``.
+
+=== Step 01 - Add configuration data to appsettings.json
+
+. Expand the Common\Services folder and open ``FortuneServiceConfig``.
+.. Notice the POCO has four properties for holding the configuration data:
+* Scheme
+* Address
+* RandomFortunePath
+* AllFortunesPath
+. Expand the Fortune-Teller-UI project
+.. Open up ``appsettings.json`` and add the following to the file:
 +
 ----
-> cf api https://api.run.haas-76.pez.pivotal.io --skip-ssl-validation
+"fortuneService": {
+    "scheme": "http",
+    "address":"localhost:5000",
+    "randomFortunePath": "api/fortunes/random",
+    "allFortunesPath": "api/fortunes/all"
+  }
 ----
-and login to Pivotal Cloudfoundry:
+{sp}+
+Notice that we are adding a section named ``fortuneService`` and then adding sub-items with names that match the ``FortuneServiceConfig`` POCO properties.
+
+=== Step 02 - Add FortuneServiceConfig to Container
+
+. Expand the Fortune-Teller-UI project
+.. Open ``Startup`` class and locate the ``Configure()`` method - the one that configures the container!
+.. Add the call to ``Configure<FortuneServiceConfig>(...)``
 +
 ----
-> cf login
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+
+    // Add framework services.
+    services.AddMvc();
+}
 ----
-+
-Follow the prompts. 
+{sp}+
+This method call actually causes a couple things to happen:
+* It uses the built configuration and gets the ``fortuneService`` section from it.
+* It passes that configuration data into the ``Configure<FortuneServiceConfig>`` which will bind the values from the configuration into the properties in ``FortuneServiceConfig``.
+* Finally it will make ``FortuneServiceConfig`` available for inject as a ``IOptions<FortuneServiceConfig>`` or ``IOptionsSnapshot<FortuneServiceConfig>``.
 
-== Deploy SimpleCloudFoundry - ASP.NET 4.5 Sample Application
-
-=== Pre-requisites
-1. Installed Pivotal CloudFoundry 1.7
-2. Installed Spring Cloud Services 1.0.9
-3. Visual Studio 2015 Update 3
-
-=== Setup Config Server
-You must first create an instance of the Config Server service in a org/space.  
-
-1. Go to the repository folder container the code for the application:
-+
-----
-> cd Samples\Configuration\src\AspDotNet4\SimpleCloudFoundry
-----
-
-2. Create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
+=== Step 03 - Update FortuneServiceClient to use FortuneServiceConfig
+. Expand the Fortune-Teller-UI project
+. Open ``FortuneServiceClient`` class and add the field and modify the constructor as follows:
 +
 ----
-> cf create-service p-config-server standard myConfigServer -c ./config-server.json
+IOptionsSnapshot<FortuneServiceConfig> _config;
+public FortuneServiceClient(IOptionsSnapshot<FortuneServiceConfig> config, ILogger<FortuneServiceClient> logger)
+{
+    _logger = logger;
+    _config = config;
+}
 ----
 
-
-=== Publish App & Push
-
-1. Open Samples\Configuration\Configuration.sln in Visual Studio.
-    a. Wait for Visual Studio to load all projects.
-2. Select SimpleCloudFoundry project in Solution Explorer.
-3. Open the manifest.yml file and change the application name to something unique: (e.g: configapp-<your_initials>)
-    a. Alternatively add a unique hosname in the manifest adding the following row below the name:
+. Modify ``AllFortunesAsync()`` and ``RandomFortuneAsync()`` to make the calls to the Fortune Teller Service:
 +
 ----
-  host: configapp-${random-word}
+public async Task<List<Fortune>> AllFortunesAsync()
+{
+    return await HandleRequest<List<Fortune>>(_config.Value.AllFortunesURL());
+}
+
+public async Task<Fortune> RandomFortuneAsync()
+{
+    return await HandleRequest<Fortune>(_config.Value.RandomFortuneURL());
+}
 ----
 
-4. Right-click project and select Publish
-5. Publish the App to a folder. (e.g. c:\publish)
-6. In a command prompt navigate to the published folder
+=== Step 04 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test.
+The Fortune-Teller-UI should now be fetching Fortunes from the Fortune-Teller-Service.
+
+. Using the skills you learned from Lab05, run the apps from VS2015 and from the command line.
+
+
+== Use Spring Cloud Config Server as a Configuration source
+In this exercise we will startup a Spring Cloud Config Server locally and move some of our configuration to the Config Server.
+We also make the changes necessary for the application components to use the Config Server.
+
+=== Step 01 - Run Spring Cloud Config Server Locally
+Here we do the steps to setup and run a Spring Cloud Config Server locally so its easier to development and test with.
+
+. To run Config Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
 +
 ----
-> cd c:\publish
+e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
 ----
 
-7. Push the application!
+. Open a command window.
+. Create the directory _c:/steeltoe/config-repo_. This will be the location the Config Server reads its configuration data from.
 +
 ----
-> cf push 
+ > mkdir c:\steeltoe\config-repo
 ----
 
+. Change directory to _Workshop/ConfigServer_
++
+----
+> cd Workshop\ConfigServer
+----
 
-=== What to expect
-The cf push will create an app in the space by the name `foo` and will bind the `myConfigServer` service instance to the app.
+. Startup the config server
++
+----
+> mvnw spring-boot:run
+----
 
-The Config Servers Git repository has been set to: `https://github.com/spring-cloud-samples/config-repo`
+=== Step 02 - Add Spring Cloud Config Server Client Nuget
+Here we add the appropriate Spring Cloud Config Server client Nuget to each Fortune Teller application.
+When targeting Spring Cloud Services on PCF, we use the Nuget: ``Pivotal.Extensions.Configuration.ConfigServer``.
+When targeting Spring Cloud Open Source, we can use Nuget: ``Steeltoe.Extensions.Configuration.ConfigServer``.
 
-Use the menus at the top of the app to see various output:
+. Expand the Fortune-Teller-UI and Fortune-Teller-Service projects.
+. Open ``project.json`` for EACH project and add the following line to the ``dependencies``:
+..  "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2"
++
+----
+"dependencies": {
+   .......
+   "Microsoft.EntityFrameworkCore": "1.0.2",
+    "Microsoft.EntityFrameworkCore.InMemory": "1.0.2",
+    "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2"
+    },
+    ......
+----
+. Save each project.json and notice that a ``dotnet restore`` is done for you.
 
-* `CloudFoundry Settings` - should show `VCAP_APPLICATION` and `VCAP_SERVICES` configuration data.
-* `Config Server Settings` - should show the settings used by the client when communicating to the config server.  These have been picked up from the service binding.
-* `Config Server Data` - this is the configuration data returned from the Config Servers Git Repo. It will be some of the data from `foo.properties`, `foo-development.properties` and `application.yml` found in the Git repo.
+=== Step 03 - Add Steeltoe Config Server provider to ConfigurationBuilder
+Here we need to use the Config Server client to retrieve the configuration from the Config Server.
+We do this bby adding it as another provider to the Configuration Builder setup.
+We add the provider after the ``AddJsonFile`` for two reasons:
 
+* Config Server client will be able to pickup its configuration from ``appsettings.json`` or ``appsettings-development.json``.
+* We want the config values retrieved from the Config Server to 'override' any values in ``appsettings`` files.
+
+. Expand the Fortune-Teller-UI and Fortune-Teller-Service projects.
+. Open ``Startup.cs`` in each project and add the following to the ConfigurationBuilder
+.. ``AddConfigServer(env)``
++
+----
+    var builder = new ConfigurationBuilder()
+        .SetBasePath(env.ContentRootPath)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+        .AddConfigServer(env)
+        .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    ......
+----
+
+=== Step 04 - Configure the Config Server Client
+Once we have the Config Server client added to the ConfigurationBuilder, we next need to configure the client.
+At a minimum we need to tell the client what URL to use to request configuration information from and what configuration data to return.
+We do this by adding the following to the ``appsettings.json`` files in each project:
+
+. Modify the Fortune-Teller-Services ``appsettings.json`` file to include the following:
++
+----
+{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
+ "spring": {
+    "application": {
+      "name": "fortuneService"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    }
+  }
+ }
+----
+. Modify the Fortune-Teller-UIs ``appsettings.json`` file to include the following:
++
+----
+{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
+ "fortuneService": {
+   "scheme": "http",
+   "address":"localhost:5000",
+   "randomFortunePath": "api/fortunes/random",
+   "allFortunesPath": "api/fortunes/all"
+ },
+  "spring": {
+    "application": {
+      "name": "fortuneui"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    }
+  }
+}
+----
+{sp}+
+
+Once complete, you should be ready to run both and they should both fetch any configuration data from the Config Server.
+But, of course we haven't put anything in the directory _c/\steeltoe/config-repo_ , the directory the Config Server is using for its data.
+That's what we'll do in the next step.
+
+=== Step 05 - Centralize configuration data
+In this step we move some of the configuration data from the ``appsettings`` files to files in the _c:/steeltoe/config-repo_; the directory the Config Server uses to serve configuration data.
+Notice that in ``appsettings.json`` there are some configuration parameters for logging that are common to both Fortune_Tellers.
+Specifically the section on logging:
+
+----
+{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
+  "spring": {
+   .....
+}
+----
+So we will go ahead and centralize that in a YAML file ``application.yml`` in the _c:/steeltoe/config-repo_ directory.
+Use your favorite editor (e.g. Notepad.exe) and create the file putting the following into it:
+----
+Logging:
+  IncludeScopes: false
+  LogLevel:
+    Default: Debug
+    System: Information
+    Microsoft: Information
+----
+Next, remove these sections from ``appsettings.json`` in both projects.
+
+Also notice that the contents of ``appsettings-development.json`` is common for both Fortune_Tellers.
+So we will also centralize that in a YAML file ``application-development.yml`` in the _c:/steeltoe/config-repo_ directory.
+So again,  use your favorite editor (e.g. Notepad.exe) and create the file putting the following into it:
+----
+Logging:
+  IncludeScopes: false
+  LogLevel:
+    Default: Debug
+    System: Debug
+    Microsoft: Debug
+    Fortune_Teller_Service: Debug
+    Fortune_Teller_UI: Debug
+----
+Next, remove the contents from ``appsettings-development.json`` in both projects.
+
+Then finally, in the ``appsettings.json`` file for Fortune-Teller-UI there is the ``fortuneService`` section that we would certainly like to manage centrally.
+So lets move that content to a YAML file named ``fortuneui.yml`` in the _c:/steeltoe/config-repo_ directory.
+So again, use your favorite editor (e.g. Notepad.exe) and create the file putting the following into it:
+----
+fortuneService:
+  scheme: http
+  address: localhost:5000
+  randomFortunePath: api/fortunes/random
+  allFortunesPath: api/fortunes/all
+----
+Next, remove this section from ``appsettings.json``.
+
+
+=== Step 06 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test.
+Every thing should work as it did before, even though now much of the configuration is coming from the Config Server.
+. Using the skills you learned from Lab05, run the apps from VS2015 and from the command line.
+
+== Deploy to Cloud Foundry
+
+=== Step 01 - Setup Config Server
+You must first create an instance of the Config Server service in your org/space.
+
+. Open a command window.
+. Change directory to your starting lab point:
+.. _Workshop/Session-03/Lab07 .... if you started with finished code.
+.. _Workshop/FortuneTeller/ .... if you are writing code from scratch.
++
+----
+> e.g cd Workshop\FortuneTeller
+----
+. Optional: Create your own github repo to hold the Config Server data
+.. Optional: Open the ``config-server.json`` file in the Solution Items folder.
+.. Optional: Modify it to point to the github repo you just created.
+.. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
+. Using the command window, create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
++
+----
+> cf create-service p-config-server standard myConfigServer -c .\config-server.json
+----
+. Wait for the service to become available:
++
+----
+> cf services
+----
+
+==== Step 02 - Push to Cloud Foundry
+. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition:
++
+----
+---
+applications:
+- name: fortuneService
+  random-route: true
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
+  command: ./Fortune-Teller-Service --server.urls "http://*:$PORT"
+  env:
+    ASPNETCORE_ENVIRONMENT: production
+  services:
+   - myConfigServer
+----
+. Using the skills you learned from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
