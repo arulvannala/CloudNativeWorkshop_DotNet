@@ -5,12 +5,12 @@
 In this lab we will become comfortable with running ASP.NET Core Web applications locally on our PC and publishing and deploying them to Cloud Foundry.
 
 We will be using a ``Fortune Teller`` micro-services based application as our sample.
-The app consists of a ``Fortune Teller Service`` which provides a REST API to serve up Fortunes and a ``Fortune Teller UI`` that can be used to display Fortunes.
+The app consists of a ``Fortune Teller Service`` which provides a REST API to serve up Fortunes and a ``Fortune Teller UI`` that can be used to display the Fortunes.
 In its current state, this app is not fully functional.
-The ``Fortune Teller Service`` only serves up a single Fortune and the Fortune Teller UI doesn't know how to communicate with the Fortune Teller Service so it always services up a ``Hello world`` Fortune.
+The ``Fortune Teller Service`` only serves up a single Fortune and the ``Fortune Teller UI`` doesn't know how to communicate with the ``Fortune Teller Service`` so it always returns a single ``Hello world`` Fortune.
 
-In this lab we will work with both of them, running them and pushing them to Cloud Foundry in their current states.
-In future labs we will systematically make the changes necessary to make them a working set of applications.
+In this lab we will work with both of them, running them and pushing them to Cloud Foundry in their current state.
+In future labs we will systematically make the changes necessary to make them a working application.
 --
 
 == Open Visual Studio Solution

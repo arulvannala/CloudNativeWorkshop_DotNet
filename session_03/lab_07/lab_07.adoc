@@ -17,12 +17,12 @@ The goals for Lab 7 are to:
 . Understand ASP.NET Core Enironments
 . Understand ASP.NET Core Options services.
 . Use Environments to have seperate configuration for ``development`` and ``production``.
-. Use Options to configure the ``FortuneServiceClient`` with ``Fortune Teller Service`` address/endpoints.
+. Use Options to configure the ``FortuneServiceClient`` with the address of the ``Fortune Teller Service``
 . Use Spring Cloud Config Server to centralize configurations
 
-For some background information on ASP.NET Core Configuration, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration[documentation]
-For some background information on ASP.NET Core Environments, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments[documentation]
-And finally, for some background information on ASP.NET Core Options, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration#options-config-objects[documentation]
+For some background information on ASP.NET Core Configuration, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration[documentation].
+For some background information on ASP.NET Core Environments, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments[documentation].
+And finally, for some background information on ASP.NET Core Options, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration#options-config-objects[documentation].
 
 --
 
@@ -177,8 +177,9 @@ The ``Fortune-Teller-UI`` should now be fetching Fortunes from the ``Fortune-Tel
 In this exercise we will startup a Spring Cloud Config Server locally and move some of our configuration data to the locally running Config Server.
 We also make the changes necessary to use the Config Server from our application. Specifically, we will use the Steeltoe Config Server client to pull config data from the Config Server.
 
-For some background information on Spring Cloud Config Server, have a look at this http://cloud.spring.io/spring-cloud-static/Camden.SR4/#_spring_cloud_config[documentation]
-For some background information on Steeltoe Config Server client, have a look at this https://github.com/SteeltoeOSS/Configuration/tree/master/src/Steeltoe.Extensions.Configuration.ConfigServer[documentation]
+For some background information on Spring Cloud Config Server, have a look at this http://cloud.spring.io/spring-cloud-static/Camden.SR4/#_spring_cloud_config[documentation].
+For some background information on Steeltoe Config Server client, have a look at this https://github.com/SteeltoeOSS/Configuration/tree/master/src/Steeltoe.Extensions.Configuration.ConfigServer[documentation].
+For other samples (ASP.NET Core and 4.x) that use the Steeltoe Config Server client, have a look https://github.com/SteeltoeOSS/Samples/tree/master/Configuration[here].
 
 === Step 01 - Run Spring Cloud Config Server Locally
 Here we do the steps to setup and run a Spring Cloud Config Server locally so its easier to development and test with.

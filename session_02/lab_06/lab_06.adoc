@@ -23,7 +23,7 @@ The goals for Lab 6 are to understand ASP.NET Core programming and to use our sk
 .. Hook up the ``IFortuneService`` to the ``FortuneController`` and modify the ``FortuneController`` to use the  newly available ``IFortuneService``.
 .. Add the ``IFortuneService`` to the ASP.NET Core service container.
 
-For some background information on ASP.NET Core programming, have a look at this https://docs.microsoft.com/en-us/aspnet/core/[documentation]
+For some background information on ASP.NET Core programming, have a look at this https://docs.microsoft.com/en-us/aspnet/core/[documentation].
 
 --
 
