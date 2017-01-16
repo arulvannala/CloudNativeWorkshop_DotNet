@@ -1,1 +1,197 @@
-= Lab 8 - Using MySql Connector from a .NET application
+= Lab 8 - MySQL Service and Steeltoe Connectors
+
+[abstract]
+--
+In this lab we will continue to add functionality to the Fortune Teller application.
+We will explore how to use a MySQL database to store the Fortunes and how to use the Steeltoe MySQL connector to automatically configure the DbContext.
+
+If you started with the _FortuneTeller.sln_, and completed Lab07, the app in its current state is still not where we would like it to be:
+
+. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold multiple ``Fortunes``.
+. The ``Fortune Teller Service`` serves up random fortunes from the datastore.
+. The ``Fortune Teller UI`` uses a configurable ``FortuneServiceClient``  service to communicate with the ``Fortune Teller Service``.
+
+The goals for Lab 7 are to:
+
+. Understand Steeltoe Connectors
+. Use Steeltoe MySQL Connector to configure ``Fortune Teller Service`` ``DbContext`` to use a centralized datastore for holding multiple ``Fortunes``.
+--
+
+== Open VS2015 Solution
+. Start VS2015 and open the solution you wish to use:
+.. _Workshop/Session-03/Lab08.sln_ if you want to start with finished code.
+.. _Workshop/FortuneTeller/FortuneTeller.sln_ if you are writing code from scratch.
+
+== Use Steeltoe MySQL Connector
+In this exercise we will be adding the code to make use of the Steeltoe MySQL connector.
+
+=== Step 01 - Run Spring Cloud Config Server Locally
+Here we do the steps to setup and run a Spring Cloud Config Server locally .
+
+. To run Config Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
++
+----
+e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
+----
+
+. Open a command window.
+. Create the directory _c:/steeltoe/config-repo_. This will be the location the Config Server reads its configuration data from.
++
+----
+ > mkdir c:\steeltoe\config-repo
+----
+
+. Change directory to _Workshop/ConfigServer_
++
+----
+> cd Workshop\ConfigServer
+----
+
+. Startup the config server
++
+----
+> mvnw spring-boot:run
+----
+
+=== Step 02 - Add Steeltoe MySql Connector Nuget
+Here we add the appropriate Steeltoe MySql Connector Nuget to the ``Fortune Teller Service``.
+You will make use of the Nuget: ``Steeltoe.CloudFoundry.Connector.MySql``.
+
+. Expand the Fortune-Teller-Service project.
+. Open ``project.json`` for and add the following line to the ``dependencies``:
+..  "Steeltoe.CloudFoundry.Connector.MySql": "1.0.0-rc2"
++
+----
+"dependencies": {
+   .......
+   "Microsoft.EntityFrameworkCore": "1.0.2",
+    "Microsoft.EntityFrameworkCore.InMemory": "1.0.2",
+    "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2",
+    "Steeltoe.CloudFoundry.Connector.MySql": "1.0.0-rc2"
+    },
+    ......
+----
+. Save project.json and notice that a ``dotnet restore`` is done for you.
+
+=== Step 03 - Add Steeltoe MySql Connector
+Next we need to configure the DbContext use MySql. Remember we did that in the ``Startup`` class; in the ``ConfigureServices`` method where the container is setup.
+
+. Expand the Fortune-Teller-Service project
+. Open ``Startup.cs`` and locate the ``Configure`` method
+
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddEntityFramework()
+            .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+    // Add framework services.
+    services.AddMvc();
+}
+----
+
+Ideally, if we were running an instance of MySQL locally on our desktop, we would like to use it and connect to it when we launch locally, in ``development`` mode.
+If that were the case then we could simply change the ``AddDbContext`` to use MySql instead of InMemory database and then configure the connector in ``appsettings``.
+Code and configuration, something like below would work.  The Steeltoe connector would use the local configuration when launched locally, but then would override the configuration with the MySql service binding when pushed to Cloud Foundry.
+
+----
+public void ConfigureServices(IServiceCollection services)
+{
+   services.AddEntityFramework()
+         .AddDbContext<FortuneContext>(options => options.UseMySql(Configuration));
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+    // Add framework services.
+    services.AddMvc();
+}
+----
+
+----
+{
+  "spring": {
+    "application": {
+      "name": "fortuneService"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    },
+    "mysql": {
+      "client": {
+        "database": "mydatabase",
+        "username": "username",
+        "password": "password"
+      }
+    }
+  }
+}
+----
+But, since we are not running MySQL locally, we will instead configure things to use an In-Memory database when in ``development`` mode, but then use a MySql database when in any other.
+To do that we would modify the ``ConfigureService()`` method as follows:
+----
+public void ConfigureServices(IServiceCollection services)
+{
+        public void ConfigureServices(IServiceCollection services)
+        {
+            if (Environment.IsDevelopment())
+            {
+                services.AddEntityFramework()
+                        .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
+            } else
+            {
+                services.AddEntityFramework()
+                     .AddDbContext<FortuneContext>(options => options.UseMySql(Configuration));
+            }
+
+            services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+            // Add framework services.
+            services.AddMvc();
+        }
+}
+----
+=== Step 04 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test.
+Every thing should work as it did before, as you will still be using the In-Memory database when running locally.
+
+. Using the skills you learned from Lab05, run the apps from VS2015 and from the command line.
+.. CTRL-F5 or F5
+.. ``dotnet run --server.urls http://*:5000``
+
+== Deploy to Cloud Foundry
+
+=== Step 01 - Setup MySql Server Instance
+You must first create an instance of the MySql Server service in your org/space.
+
+. Open a command window.
+. Using the command window, create an instance of the MySql server:
++
+----
+> cf create-service p-mysql 100mb myMySqlService
+----
+
+
+==== Step 02 - Push to Cloud Foundry
+. Examine the ``manfest.yml`` file for ``Fortune-Teller-Service`` project and notice ``services`` addition:
++
+----
+---
+applications:
+- name: fortuneService
+  random-route: true
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
+  command: ./Fortune-Teller-Service --server.urls "http://*:$PORT"
+  env:
+    ASPNETCORE_ENVIRONMENT: production
+  services:
+   - myConfigServer
+   - myMySqlService
+----
+
+. Using the skills you learned from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
