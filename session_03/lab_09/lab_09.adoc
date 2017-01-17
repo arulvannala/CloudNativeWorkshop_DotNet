@@ -1,20 +1,25 @@
-= Lab 9 - Service Discovery and Steeltoe Eureka
+= Lab 09 - Scaling and Steeltoe Connectors
 
 [abstract]
 --
 In this lab we will continue to add functionality to the Fortune Teller application.
-We will explore how to use Netflix Eureka for service registration and discovery using the Steeltoe Discovery client.
+We will explore some of the existing horizontal scaling issues with the app and how Steeltoe connectors and data protection providers can help solve those issues.
 
-If you started with the _FortuneTeller.sln_, and completed Lab08, the app in its current state is still not where we would like it to be:
+If you started with the _FortuneTeller.sln_, and completed Lab 8, you have an app that is still not where we would like it to be:
 
-. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold multiple ``Fortunes``.
-. The ``Fortune Teller Service`` serves up random fortunes from the datastore.
-. The ``Fortune Teller UI`` uses a configurable ``FortuneServiceClient``  service to communicate with the ``Fortune Teller Service``.
+. The ``Fortune Teller Service`` can not scale horizontally, as it uses a backend in-memory datastore to hold Fortunes.
+. The ``Fortune Teller UI`` can not scale horizontally, as its session state (i.e. Users Fortune) will get lost.
 
-The goals for Lab 7 are to:
+The goals for Lab 8 are to:
+. Understand ASP.NET Core Session services.
+. Understand ASP.NET Core Data Protection services
+. Use Steeltoe MySql Connector to bind the ``FortuneContext`` with a  MySql database.
+. Use Steeltoe Redis Connector to cause the ASP.NET Core Session to use Redis for its Session storage.
+. Use Steeltoe Redis Connector to cause the ASP.NET Core Data Protection service to use Redis to store its key ring.
 
-. Understand Steeltoe Connectors
-. Use Steeltoe MySQL Connector to configure ``Fortune Teller Service`` ``DbContext`` to use a centralized datastore for holding multiple ``Fortunes``.
+For some background information on ASP.NET Core Sessions, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/app-state[documentation].
+
+For some background information on ASP.NET Core Data Protection, have a look at this https://docs.microsoft.com/en-us/aspnet/core/security/data-protection/introduction[documentation].
 --
 
 == Open VS2015 Solution
@@ -22,11 +27,50 @@ The goals for Lab 7 are to:
 .. _Workshop/Session-03/Lab09.sln_ if you want to start with finished code.
 .. _Workshop/FortuneTeller/FortuneTeller.sln_ if you are writing code from scratch.
 
+== Understanding ASP.NET Core Sessions and Data Protection
+. Expand the ``Fortune-Teller-UI`` project
+. Open and examine ``Startup``, as this is where the ASP.NET Core Session middleware is setup
+.. Examine ``ConfigurationBuilder`` and ``SetBasePath``
+.. Examine ``AddJsonFile()`` methods.  These are adding Configuration sources to the ``ConfigurationBuilder``.
+... Notice the  ``AddEnvironmentVariables()`` as another provider added to builder.
+... Explain Environments (e.g. development, staging, etc) and ``IHostingEnvironment.EnvironmentName``
+... Explain setting Environments using ``ASPNETCORE_ENVIRONMENT`` and point out ``launchSettings.json``
+.. Examine the arguments to ``AddJsonFile``
+.. Notice ``appsettings-<<EnvironmentName>>.json`` is not present.
+.. Notice ``Configuration = builder.Build()``. It actually builds the configuration at this point.
+... Explain how one providers configuration values can override the others.
+.. Open ``appsettings.json``. Current contents is used to configuring logging.
+... Notice ``loggerFactory.AddConsole(...)`` in ``Configure`` method.
 
-== Use Spring Cloud Eureka Server as a Discovery server
+== Use Steeltoe MySQL Connector
+In this exercise we will be adding code to the ``Fortune Teller Service`` to make use of the Steeltoe MySQL connector.
 
-=== Step 01 - Run Spring Cloud Config Server Locally
-Here we make sure a Spring Cloud Config Server is running locally so its easier to development and test with.
+=== Step 01 - Run Spring Cloud Eureka Server Locally
+We are still using the Eureka Server, so we need to make sure it is still running locally so its easier to development and test with.
+
+. To run Eureka Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
++
+----
+e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
+----
+
+. Open a command window.
+. Change directory to _Workshop/EurekaServer_
++
+----
+> cd Workshop\EurekaServer
+----
+
+. Startup the eureka server
++
+----
+> mvnw spring-boot:run
+----
+{sp}+
+It will start up on port 8761 and serve the Eureka API from "/eureka".
+
+=== Step 02 - Run Spring Cloud Config Server Locally
+We are still using the Config Server, so we need to make sure it is still running locally so its easier to development and test with.
 
 . To run Config Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
 +
@@ -56,200 +100,415 @@ e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
 {sp}+
 It will start up on port 8888 and serve configuration data from "file:///steeltoe/config-repo"
 
-=== Step 02 - Run Spring Cloud Eureka Server Locally
-Here we make sure a Spring Cloud Eureka Server is running locally so its easier to development and test with.
+=== Step 03 - Add Steeltoe MySql Connector Nuget
+Here we add the appropriate Steeltoe MySql Connector Nuget to the ``Fortune Teller Service``.
+You will make use of the Nuget: ``Steeltoe.CloudFoundry.Connector.MySql``.
 
-. To run Eureka Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
-+
-----
-e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
-----
-
-. Open a command window.
-. Change directory to _Workshop/EurekaServer_
-+
-----
-> cd Workshop\EurekaServer
-----
-
-. Startup the eureka server
-+
-----
-> mvnw spring-boot:run
-----
-{sp}+
-It will start up on port 8761 and serve the Eureka API from "/eureka".
-
-=== Step 02 - Add Steeltoe Discovery Client Nuget
-Here we add the appropriate Spring Cloud Eureka Server client Nuget to each Fortune Teller application.
-When targeting Spring Cloud Services on PCF, we use the Nuget: ``Pivotal.Discovery.Client``.
-When targeting Spring Cloud Open Source, we can use Nuget: ``Steeltoe.Discovery.Client``.
-
-. Expand the Fortune-Teller-UI and Fortune-Teller-Service projects.
-. Open ``project.json`` for EACH project and add the following line to the ``dependencies``:
-..  "Pivotal.Discovery.Client": "1.0.0-rc2"
+. Expand the ``Fortune-Teller-Service`` project.
+. Open ``project.json`` and add the following line to the ``dependencies``:
+..  "Steeltoe.CloudFoundry.Connector.MySql": "1.0.0-rc2"
 +
 ----
 "dependencies": {
    .......
-    "Microsoft.EntityFrameworkCore": "1.0.2",
+   "Microsoft.EntityFrameworkCore": "1.0.2",
     "Microsoft.EntityFrameworkCore.InMemory": "1.0.2",
     "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2",
-    "Pivotal.Discovery.Client": "1.0.0-rc2"
+    "Steeltoe.CloudFoundry.Connector.MySql": "1.0.0-rc2"
     },
     ......
 ----
-. Save each project.json and notice that a ``dotnet restore`` is done for you.
+. Save project.json and notice that a ``dotnet restore`` is done for you.
 
-=== Step 03 - Add Steeltoe Discovery Client to Container
-Here we need to use add the Steeltoe Discovery Client to container and to start it up, running in the background, fetching Service discovery information.
-We do this by adding it as another service to the ``IServiceCollection`` in ``ConfigureServices``.
+=== Step 04 - Add Steeltoe MySql Connector
+Next we need to configure the ``DbContext`` to use MySql.
+Remember we did that in the ``Startup`` class; in the ``ConfigureServices`` method where the service container is setup.
 
-. Expand the Fortune-Teller-UI and Fortune-Teller-Service projects.
-. Open ``Startup.cs`` in each project and modify the ``ConfigureServices`` to include a call to ``AddDiscoveryClient(Configuration``:
-+
+. Expand the ``Fortune-Teller-Service`` project
+. Open ``Startup`` and locate the ``ConfigureServices()`` method. You should see something like the following:
+
 ----
- public void ConfigureServices(IServiceCollection services)
+public void ConfigureServices(IServiceCollection services)
 {
-.....
-        services.AddSingleton<IFortuneRepository, FortuneRepository>();
+    services.AddEntityFramework()
+            .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
 
-        services.AddDiscoveryClient(Configuration);
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
 
-        // Add framework services.
-        services.AddMvc();
-......
-}
-----
-. We also need to start the Discovery client running in the background,  fetching Service discovery information. To do this we add a ``UseDiscoveryClient()`` method call in  ``Configure()``.
-+
-----
-public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-{
-.....
-    app.UseMvc();
-
-    app.UseDiscoveryClient();
-.....
+    // Add framework services.
+    services.AddMvc();
 }
 ----
 
-=== Step 04 - Configure the Discovery Client
-Once we have the Discovery client added to the service container we next need to configure the client.
-We have two sets of Discovery client configuration data to provide, one for the ``Fortune Teller Service`` and the other for ``Fortune Teller UI``.
-For the ``Fortune Teller Server`` we want it to register itself with the Eureka Discovery Server, but we don't need it to fetch any services as it doesn't make any external service requests.
-For the ``Fortune Teller UI`` we want it to fetch registered services, but we don't need to register, as it has no external REST endpoints it exposes.
-And finally, for both we need to configure the URL endpoint of the Eureka Server that we want to use.
+Ideally, if we were running an instance of MySQL locally on our desktop, we would just like to use it when we launch the app locally, in ``development`` mode.
+If that were the case then we could simply change the ``.AddDbContext<FortuneContext>()`` call above to use MySql instead of the InMemory database and then configure the Steeltoe Connector in ``appsettings`` to use it.
+The code and configuration would look something like below.
+With this code, the Steeltoe Connector would use the configuration (i.e. ``appsettings``) when launched locally, but then would override its configuration with the MySql service binding when pushed to Cloud Foundry.
 
-. Modify the ``application.yml`` file in _c:/steeltoe/config-repo_ to contain:
+----
+public void ConfigureServices(IServiceCollection services)
+{
+   services.AddEntityFramework()
+         .AddDbContext<FortuneContext>(options => options.UseMySql(Configuration));
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+    // Add framework services.
+    services.AddMvc();
+}
+----
+
+----
+{
+  "spring": {
+    "application": {
+      "name": "fortuneService"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    }
+  },
+  "mysql": {
+    "client": {
+      "database": "mydatabase",
+      "username": "username",
+      "password": "password"
+    }
+  }
+}
+----
+But since we are not running MySQL locally, we will instead configure things to use an In-Memory database when in ``development`` mode, but then use a MySql database when in any other.
+To do that we will modify the ``ConfigureServices()`` method as follows:
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    if (Environment.IsDevelopment())
+    {
+        services.AddEntityFramework()
+                .AddDbContext<FortuneContext>(options => options.UseInMemoryDatabase());
+    } else
+    {
+        services.AddEntityFramework()
+             .AddDbContext<FortuneContext>(options => options.UseMySql(Configuration));
+    }
+
+    services.AddSingleton<IFortuneRepository, FortuneRepository>();
+
+    // Add framework services.
+    services.AddMvc();
+}
+----
+=== Step 05 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test.
+Every thing should work as it did before, as you will still be using the In-Memory database when running locally.
+In an upcoming exercise, we will push the Fortune-Tellers to Cloud Foundry and test the MySql connection.
+
+. Using the skills you picked up in Lab05, run the apps from VS2015 and from the command line.
+.. CTRL-F5 or F5
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
+
+== Use Redis for Session Storage
+In this exercise we will be adding code to the ``Fortune Teller UI`` to make use of the Steeltoe Redis connector.
+We will use it to hook up the ASP.NET Core DistributedCache to a Redis service instance.
+
+=== Step 01 - Run Spring Cloud Eureka Server Locally
+We are still using the Eureka Server, so make sure it is still running locally.
+See above if its not!
+
+=== Step 02 - Run Spring Cloud Config Server Locally
+We are still using the Config Server, so make sure it is still running locally.
+See above if its not!
+
+=== Step 03 - Add Steeltoe Redis Connector Nuget
+Here we add the appropriate Steeltoe Redis Connector Nuget to the ``Fortune Teller UI``.
+You will make use of the Nuget: ``Steeltoe.CloudFoundry.Connector.Redis``.
+
+. Expand the ``Fortune-Teller-UI`` project.
+. Open ``project.json`` and add the following line to the ``dependencies``:
+..  "Steeltoe.CloudFoundry.Connector.Redis": "1.0.0-rc2"
 +
 ----
-Logging:
-  IncludeScopes: false
-  LogLevel:
-    Default: Information
-    System: Information
-    Microsoft: Information
-eureka:
-  client:
-    serviceUrl: http://localhost:8761/eureka/
-    validate_certificates: false
+"dependencies": {
+   .......
+    "Microsoft.Extensions.Options.ConfigurationExtensions": "1.1.0",
+    "Pivotal.Discovery.Client": "1.0.0-rc2",
+    "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2",
+    "Steeltoe.CloudFoundry.Connector.Redis": "1.0.0-rc2",
+    },
+    ......
 ----
-{sp}+
-So in the above, we configure the ``eureka client`` and we configure the endpoint (``serviceUrl`` of the Eureka server.
-Since this data is contain in ``application.yml`` it will be returned for ALL (e.g. fortuneService and fortuneui) applications fetching data from this config server.
-. Modify the ``fortuneService.yml`` file in _c:/steeltoe/config-repo_ to contain:
-+
-----
-eureka:
-  client:
-    shouldFetchRegistry: false
-  instance:
-    port: 5000
-    hostName: localhost
-----
-{sp}+
-Since the above information is contained in ``fortuneService.yml``, it applies to all apps with the ``spring:name`` == ``fortuneService``.
-Here we tell the client to not fetch any service registry information (``shouldFetchRegistry: false``).
-Then we tell it to register itself as an ``instance``, listening at the address ``localhost:5000``.
-Note that the name for ``Fortune Teller Service`` comes from ``appsettings.json``. (``spring:name`` = ``fortuneService``).
-All of this should work fine when running locally and will be override with the Eureka service binding when we push it to Cloud Foundry.
+. Save ``project.json`` and notice that a ``dotnet restore`` is done for you.
 
-. Modify the ``fortuneui.yml`` file in _c:/steeltoe/config-repo_ to contain:
-+
-----
-eureka:
-  client:
-    shouldRegisterWithEureka: false
+=== Step 04 - Add Steeltoe Redis Connector
+Currently the ``Fortune-Teller-UI`` is using an In-memory cache for its session storage.
+To see how this is currently setup to work:
 
-fortuneService:
-  scheme: http
-  address: fortuneService
-  randomFortunePath: api/fortunes/random
-  allFortunesPath: api/fortunes/all
+. Expand the ``Fortune-Teller-UI`` project
+. Open ``Startup`` and locate the ``ConfigureServices()`` method. You should see something like the whats shown below.
+
 ----
-{sp}+
-Since the above information is contained in ``fortuneui.yml``, it applies to all apps with the ``spring:name`` == ``fortuneui``.
-Here we tell the client to go ahead and fetch any service registry information; the default is (``shouldFetchRegistry: true``).
-Then we tell it NOT register itself (``shouldRegisterWithEureka: false``) and so we don't provide any ``instance`` configuration data.
-Note that the name for ``Fortune Teller UI`` comes from ``appsettings.json``. (``spring:name`` = ``fortuneui``).
-Also notice that we changed ``address`` in the ``fortuneService``. Instead of using ``localhost:5000`` like before, we use the name of the ``Fortune Teller Service`` registered with Eureka.
-All of this should work fine when running locally and will be override with the Eureka service binding when we push it to Cloud Foundry.
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+    services.AddDistributedMemoryCache();
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
+
+Like the case above with MySql, if we were running an instance of Redis locally on our desktop, we would just like to use it when we launch the app locally, in ``development`` mode.
+If that were the case then we could simply change the ``. services.AddDistributedMemoryCache()`` call above to use a DistributedRedisCache instead of the InMemory cache and then configure the Steeltoe Connector in ``appsettings`` to use it.
+The code and configuration would look something like that shown below.
+With this code, the Steeltoe Connector would use the configuration (i.e. ``appsettings``) when launched locally, but then would override its configuration with the Redis service binding when pushed to Cloud Foundry.
+
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+    services.AddDistributedMemoryCache();
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
+
+----
+{
+  "spring": {
+    "application": {
+      "name": "fortuneui"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    }
+  },
+  "redis": {
+    "client": {
+      "host": "http://foo.bar",
+      "port": 1111
+    }
+  }
+}
+----
+But, just like the case with MySQL, we are not running Redis locally, so we will instead have to configure things similar to MySql.
+That is to use an In-Memory database when in ``development`` mode, but then use a Redis cache when in any other.
+To do that we will modify the ``ConfigureServices()`` method as follows:
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+
+    if (Environment.IsDevelopment())
+    {
+        services.AddDistributedMemoryCache();
+    }
+    else
+    {
+        // Use Redis cache to store session data
+        services.AddDistributedRedisCache(Configuration);
+    }
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
 
 === Step 05 - Run Locally
 At this point you should be ready to run both Fortune-Tellers locally and test.
-Every thing should work as it did before, but now we are using Eureka for service registration and discovery.
+Every thing should work as it did before, as you will still be using the In-Memory cache when running locally.
+In an upcoming exercise, we will push the Fortune-Tellers to Cloud Foundry and test the cache connection.
 
-. Using the skills you learned from Lab05, run the apps from VS2015 and from the command line.
+. Using the skills you picked up in Lab05, run the apps from VS2015 and from the command line.
 .. CTRL-F5 or F5
-.. ``dotnet run --server.urls http://*:5000``, dotnet run --server.urls http://*:5555``
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
+
+== Use Redis for Data Protection Key Storage
+In this exercise we will be adding code to the ``Fortune Teller UI`` to make use of the Steeltoe Redis connector.
+We will use it to hook up the ASP.NET Core DistributedCache to a Redis service instance.
+
+=== Step 01 - Run Spring Cloud Eureka Server Locally
+We are still using the Eureka Server, so make sure it is still running locally.
+See above if its not!
+
+=== Step 02 - Run Spring Cloud Config Server Locally
+We are still using the Config Server, so make sure it is still running locally.
+See above if its not!
+
+=== Step 03 - Add Steeltoe Redis Connector Nuget
+Here we add the appropriate Steeltoe Redis Connector Nuget to the ``Fortune Teller UI``.
+You will make use of the Nuget: ``Steeltoe.CloudFoundry.Connector.Redis``.
+
+. Expand the ``Fortune-Teller-UI`` project.
+. Open ``project.json`` and add the following line to the ``dependencies``:
+..  "Steeltoe.CloudFoundry.Connector.Redis": "1.0.0-rc2"
++
+----
+"dependencies": {
+   .......
+    "Microsoft.Extensions.Options.ConfigurationExtensions": "1.1.0",
+    "Pivotal.Discovery.Client": "1.0.0-rc2",
+    "Pivotal.Extensions.Configuration.ConfigServer": "1.0.0-rc2",
+    "Steeltoe.CloudFoundry.Connector.Redis": "1.0.0-rc2",
+    },
+    ......
+----
+. Save ``project.json`` and notice that a ``dotnet restore`` is done for you.
+
+=== Step 04 - Add Steeltoe Redis Connector
+Currently the ``Fortune-Teller-UI`` is using an In-memory cache for its session storage.
+To see how this is currently setup to work:
+
+. Expand the ``Fortune-Teller-UI`` project
+. Open ``Startup`` and locate the ``ConfigureServices()`` method. You should see something like the whats shown below.
+
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+    services.AddDistributedMemoryCache();
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
+
+Like the case above with MySql, if we were running an instance of Redis locally on our desktop, we would just like to use it when we launch the app locally, in ``development`` mode.
+If that were the case then we could simply change the ``. services.AddDistributedMemoryCache()`` call above to use a DistributedRedisCache instead of the InMemory cache and then configure the Steeltoe Connector in ``appsettings`` to use it.
+The code and configuration would look something like that shown below.
+With this code, the Steeltoe Connector would use the configuration (i.e. ``appsettings``) when launched locally, but then would override its configuration with the Redis service binding when pushed to Cloud Foundry.
+
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+    services.AddDistributedMemoryCache();
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
+
+----
+{
+  "spring": {
+    "application": {
+      "name": "fortuneui"
+    },
+    "cloud": {
+      "config": {
+        "uri": "http://localhost:8888",
+        "validate_certificates": false
+      }
+    }
+  },
+  "redis": {
+    "client": {
+      "host": "http://foo.bar",
+      "port": 1111
+    }
+  }
+}
+----
+But, just like the case with MySQL, we are not running Redis locally, so we will instead have to configure things similar to MySql.
+That is to use an In-Memory database when in ``development`` mode, but then use a Redis cache when in any other.
+To do that we will modify the ``ConfigureServices()`` method as follows:
+----
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IFortuneService, FortuneServiceClient>();
+    services.Configure<FortuneServiceConfig>(Configuration.GetSection("fortuneService"));
+    services.AddDiscoveryClient(Configuration);
+
+    // Add framework services.
+
+    if (Environment.IsDevelopment())
+    {
+        services.AddDistributedMemoryCache();
+    }
+    else
+    {
+        // Use Redis cache to store session data
+        services.AddDistributedRedisCache(Configuration);
+    }
+
+    services.AddSession();
+
+    services.AddMvc();
+}
+----
+
+=== Step 05 - Run Locally
+At this point you should be ready to run both Fortune-Tellers locally and test.
+Every thing should work as it did before, as you will still be using the In-Memory cache when running locally.
+In an upcoming exercise, we will push the Fortune-Tellers to Cloud Foundry and test the cache connection.
+
+. Using the skills you picked up in Lab05, run the apps from VS2015 and from the command line.
+.. CTRL-F5 or F5
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
+
+
 
 == Deploy to Cloud Foundry
 
-=== Step 01 - Setup Config Server
-You must first create an instance of the Config Server service in your org/space if you haven't already done so.
+=== Step 01 - Setup MySql Server Instance
+You must first create an instance of the MySql Server service in your org/space.
 
 . Open a command window.
-. Change directory to your starting lab point:
-.. _Workshop/Session-03/Lab09 .... if you started with finished code.
-.. _Workshop/FortuneTeller/ .... if you are writing code from scratch.
+. Using the command window, create an instance of the MySql service:
 +
 ----
-> e.g cd Workshop\FortuneTeller
-----
-. Optional: Create your own github repo to hold the Config Server data
-.. Optional: Open the ``config-server.json`` file in the Solution Items folder.
-.. Optional: Modify it to point to the github repo you just created.
-.. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
-. Using the command window, create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
-+
-----
-> cf create-service p-config-server standard myConfigServer -c .\config-server.json
-----
-. Wait for the service to become available:
-+
-----
-> cf services
+> cf create-service p-mysql 100mb myMySqlService
 ----
 
-=== Step 02 - Setup Eureka Server
-You must first create an instance of the Eureka Server service in your org/space if you haven't already done so.
+=== Step 02 - Setup Redis Server Instance
+You must first create an instance of the Redis service in your org/space.
 
 . Open a command window.
-. Using the command window, create an instance of the Eureka server:
+. Using the command window, create an instance of the Redis service:
 +
 ----
-> cf create-service p-service-registry standard myDiscoveryService
-----
-
-. Wait for the service to become available:
-+
-----
-> cf services
+> cf create-service p-redis shared-vm myRedisService
 ----
 
 ==== Step 03 - Push to Cloud Foundry
-. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition:
+. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition shown below.
+You need to make this change in your ``manifest.yml`` before you push to Cloud Foundry.
+Also, notice the ``ASPNETCORE_ENVIRONMENT`` setting.
+Feel free to change that to ``development`` if you want to turn on debug logging.
 +
 ----
 ---
@@ -263,9 +522,22 @@ applications:
     ASPNETCORE_ENVIRONMENT: production
   services:
    - myConfigServer
+   - myMySqlService
    - myDiscoveryService
+---
+applications:
+- name: fortuneui
+  random-route: true
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
+  command: ./Fortune-Teller-UI --server.urls "http://*:$PORT"
+  env:
+    ASPNETCORE_ENVIRONMENT: production
+  services:
+   - myConfigServer
+   - myDiscoveryService
+   - myRedisService
 ----
-. Using the skills you learned from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
+. Using the skills you picked from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
-

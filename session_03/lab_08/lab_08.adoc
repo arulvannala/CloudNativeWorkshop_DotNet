@@ -7,8 +7,7 @@ We will explore how to use Netflix Eureka for service registration and discovery
 
 If you started with the _FortuneTeller.sln_, and completed Lab 7, you have an app that is still not where we would like it to be:
 
-. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold multiple ``Fortunes``.
-. The ``Fortune Teller Service`` serves up random fortunes from the datastore.
+. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold  Fortunes.
 . The ``Fortune Teller UI`` uses a configurable ``FortuneServiceClient``  service to communicate with the ``Fortune Teller Service``.
 .. But we have to reconfigure the ``Fortune Teller UI`` every time we change the address of the ``Fortune Teller Service``
 
@@ -27,7 +26,7 @@ The goals for Lab 8 are to:
 == Use Spring Cloud Eureka Server as a Discovery server
 
 === Step 01 - Run Spring Cloud Eureka Server Locally
-Here we make sure a Spring Cloud Eureka Server is running locally so its easier to development and test with.
+Here we need to make sure a Spring Cloud Eureka Server is running locally so its easier to development and test with.
 
 . To run Eureka Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
 +
@@ -51,7 +50,7 @@ e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
 It will start up on port 8761 and serve the Eureka API from "/eureka".
 
 === Step 02 - Run Spring Cloud Config Server Locally
-We are still using the Config Server, so we make sure it is still running locally so its easier to development and test with.
+We are still using the Config Server, so we make sure it is running locally so its easier to development and test with.
 
 . To run Config Server you will need Java JDK installed on your machine and the JAVA_HOME environment variable set to the JDK's installed location:
 +
@@ -80,7 +79,6 @@ e.g. JAVA_HOME=C:\Program Files\Java\jdk1.8.0_112
 ----
 {sp}+
 It will start up on port 8888 and serve configuration data from "file:///steeltoe/config-repo"
-
 
 === Step 03 - Add Steeltoe Discovery Client Nuget
 Here we add the appropriate Spring Cloud Eureka Server client Nuget to each Fortune Teller application.
@@ -123,7 +121,8 @@ We do this by adding it as another service to the ``IServiceCollection`` in ``Co
 ......
 }
 ----
-. Then we also need to start the Discovery client running in the background. To do this we add a ``UseDiscoveryClient()`` method call in  ``Configure()`` method.
+. Then we also need to start the Discovery client running in the background.
+To do this we add a ``UseDiscoveryClient()`` method call in  ``Configure()`` method.
 +
 ----
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -285,7 +284,10 @@ Make sure you still have an instance of the Config Server service in your org/sp
 
 
 ==== Step 03 - Push to Cloud Foundry
-. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition:
+. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition shown below.
+You need to make this change in your ``manifest.yml`` before you push to Cloud Foundry.
+Also, notice the ``ASPNETCORE_ENVIRONMENT`` setting.
+Feel free to change that to ``development`` if you want to turn on debug logging.
 +
 ----
 ---
@@ -300,6 +302,20 @@ applications:
   services:
    - myConfigServer
    - myDiscoveryService
+
+---
+applications:
+- name: fortuneui
+  random-route: true
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
+  command: ./Fortune-Teller-UI --server.urls "http://*:$PORT"
+  env:
+    ASPNETCORE_ENVIRONMENT: production
+  services:
+   - myConfigServer
+   - myDiscoveryService
+
 ----
 . Using the skills you picked from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``

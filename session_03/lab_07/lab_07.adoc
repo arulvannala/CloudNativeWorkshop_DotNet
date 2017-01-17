@@ -7,7 +7,7 @@ We will explore how to use the ASP.NET Core Configuration services and how to ad
 
 If you started with the _FortuneTeller.sln_, and completed Lab06, the app in its current state is still not fully functional:
 
-. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold ``Fortunes``.
+. The ``Fortune Teller Service`` uses a backend in-memory datastore to hold Fortunes.
 . The ``Fortune Teller Service`` serves up random fortunes from the datastore.
 . The ``Fortune Teller UI`` uses a ``FortuneServiceClient`` but it doesn't know how to communicate with the ``Fortune Teller Service`` yet.
 
@@ -21,7 +21,9 @@ The goals for Lab 7 are to:
 . Use Spring Cloud Config Server to centralize configurations
 
 For some background information on ASP.NET Core Configuration, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration[documentation].
+
 For some background information on ASP.NET Core Environments, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments[documentation].
+
 And finally, for some background information on ASP.NET Core Options, have a look at this https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration#options-config-objects[documentation].
 
 --
@@ -31,7 +33,7 @@ And finally, for some background information on ASP.NET Core Options, have a loo
 .. _Workshop/Session-03/Lab07.sln_ if you want to start with finished code.
 .. _Workshop/FortuneTeller/FortuneTeller.sln_ if you are writing code from scratch.
 
-== Understanding ASP.NET Core Configuration, Environment and Options services
+== Understanding ASP.NET Core Configuration, Environment and Options
 . Expand the ``Fortune-Teller-UI`` project
 . Open and examine ``Startup.cs``, as this is where the configuration is built
 .. Examine ``ConfigurationBuilder`` and ``SetBasePath``
@@ -421,7 +423,10 @@ You must first create an instance of the Config Server service in your org/space
 ----
 
 === Step 02 - Push to Cloud Foundry
-. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition:
+. Examine the ``manfest.yml`` files for both projects and notice ``services`` addition shown below.
+You need to make this change in your ``manifest.yml`` before you push to Cloud Foundry.
+Also, notice the ``ASPNETCORE_ENVIRONMENT`` setting.
+Feel free to change that to ``development`` if you want to turn on debug logging.
 +
 ----
 ---
@@ -435,13 +440,25 @@ applications:
     ASPNETCORE_ENVIRONMENT: production
   services:
    - myConfigServer
+
+---
+applications:
+- name: fortuneService
+  random-route: true
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
+  command: ./Fortune-Teller-Service --server.urls "http://*:$PORT"
+  env:
+    ASPNETCORE_ENVIRONMENT: production
+  services:
+   - myConfigServer
 ----
-. Using the skills you learned from Lab05, publish and push both components to a Linux cell on Cloud Foundry.
+. Using the skills you picked up from Lab05, publish and push both components to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
 === Step 03 - Configure for CloudFoundry
 . Try hitting the ``Fortune Teller UI`` and notice that it fails to communicate with the ``Fortune Teller Service``.
-Why - the ``fortuneService`` configuration is pointing to ``localhost:5000``.
+Why -> Remember the ``fortuneService`` configuration is pointing to ``localhost:5000``.
 . Optional: If you're using your own github repo to hold Config Server data, modify the ``fortuneService`` configuration to make it work and restart the UI.
 

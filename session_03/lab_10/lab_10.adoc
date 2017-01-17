@@ -1,1 +1,1 @@
-= Lab 10 - Using Sessions and Scaling Horizontally
+= Lab 10 - Security and Steeltoe Security Providers
