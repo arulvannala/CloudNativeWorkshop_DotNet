@@ -30,6 +30,7 @@ Follow the prompts.
 
 == Publish and Push It!
 . Start Visual Studio 2015 and open the solution _Workshop/Session-01/Lab01.sln_
+. Right click on a project and right click on CloudFoundry within the lab and select publish
 . Publish the application. A CloudFoundry publish profile has already been setup and can be used to publish to the directory _C:/publish_
 . Change to the publish directory, _C:/publish_.(this is the default folder the publish profile uses):
 +
