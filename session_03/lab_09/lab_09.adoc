@@ -1,4 +1,4 @@
-= Lab 09 - Scaling and Steeltoe Connectors
+= Lab 09 - Scaling and Steeltoe
 
 [abstract]
 --
@@ -8,7 +8,7 @@ We will explore some of the existing horizontal scaling issues with the app and 
 If you started with the _FortuneTeller.sln_, and completed Lab 8, you have an app that is still not where we would like it to be:
 
 . The ``Fortune Teller Service`` can not scale horizontally, as it uses a backend in-memory datastore to hold Fortunes.
-. The ``Fortune Teller UI`` can not scale horizontally, as its session state (i.e. Users Fortune) will get lost.
+. The ``Fortune Teller UI`` can not scale horizontally, as its session state (i.e. Users Fortune) gets lost.
 
 The goals for Lab 8 are to:
 
@@ -38,18 +38,18 @@ And for Steeltoe Sample apps illustrating the use of various Security providers,
 
 == Understanding ASP.NET Core Sessions and Data Protection
 . Expand the ``Fortune-Teller-UI`` project
-. Open and examine ``Startup``, as this is where the ASP.NET Core Session middleware is setup
-.. Examine ``ConfigurationBuilder`` and ``SetBasePath``
-.. Examine ``AddJsonFile()`` methods.  These are adding Configuration sources to the ``ConfigurationBuilder``.
-... Notice the  ``AddEnvironmentVariables()`` as another provider added to builder.
-... Explain Environments (e.g. development, staging, etc) and ``IHostingEnvironment.EnvironmentName``
-... Explain setting Environments using ``ASPNETCORE_ENVIRONMENT`` and point out ``launchSettings.json``
-.. Examine the arguments to ``AddJsonFile``
-.. Notice ``appsettings-<<EnvironmentName>>.json`` is not present.
-.. Notice ``Configuration = builder.Build()``. It actually builds the configuration at this point.
-... Explain how one providers configuration values can override the others.
-.. Open ``appsettings.json``. Current contents is used to configuring logging.
-... Notice ``loggerFactory.AddConsole(...)`` in ``Configure`` method.
+. Open and examine ``Startup``, as this is where the ASP.NET Core Session services and middleware is setup
+.. Examine ``ConfigureServices()``
+... Explain ``AddSession()``
+... Explain ``AddDistributedMemoryCache()``
+.. Examine ``Configure()``
+... Explain ``UseSession()``
+... Explain implied ``UseCookies()``
+. Explain how ``DataProtection`` is used for encryption.
+.. How its used to encrypt data stored in session
+.. How its use to encrypt session ids.
+.. Explain key ring
+
 
 == Use Steeltoe MySQL Connector
 In this exercise we will be adding code to the ``Fortune Teller Service`` to make use of the Steeltoe MySQL connector.
