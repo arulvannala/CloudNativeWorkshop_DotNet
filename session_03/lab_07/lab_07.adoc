@@ -83,7 +83,8 @@ At this point you should be ready to run both Fortune-Tellers locally and test:
 
 . Using the skills you picked up from Lab05, run the apps from VS2015 and from the command line.
 .. CTRL-F5 or F5
-.. ``dotnet run --server.urls http://*:5000``, ``dotnet run --server.urls http://*:5555``
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
 . Modify ``ASPNETCORE_ENVIRONMENT`` in ``launchsettings.json`` for each project and verify you are getting the appropriate logging information when you run the application.
 .. Hint: Amoung other places, look at the ``FortunesController`` action methods for logging calls.
 . Change the log levels in  ``appsettings-development.json`` while ``Fortune-Teller-Service`` and ``Fortune-Teller-UI`` are running to see if changes are picked up.
@@ -171,7 +172,8 @@ The ``Fortune-Teller-UI`` should now be fetching Fortunes from the ``Fortune-Tel
 
 . Using the skills you picked up from Lab05, run the apps from VS2015 and from the command line.
 .. CTRL-F5 or F5
-.. ``dotnet run --server.urls http://*:5000``, ``dotnet run --server.urls http://*:5555``
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
 
 == Use Spring Cloud Config Server as a Configuration source
 In this exercise we will startup a Spring Cloud Config Server locally and move some of our configuration data to the locally running Config Server.
@@ -387,7 +389,8 @@ Every thing should work as it did before, even though now much of the configurat
 
 . Using the skills you picked up from Lab05, run the apps from VS2015 and from the command line.
 .. CTRL-F5 or F5
-.. ``dotnet run --server.urls http://*:5000``, ``dotnet run --server.urls http://*:5555``
+.. ``dotnet run --server.urls http://*:5000``
+.. ``dotnet run --server.urls http://*:5555``
 
 == Deploy to Cloud Foundry
 
