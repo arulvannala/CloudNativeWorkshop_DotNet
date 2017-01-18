@@ -443,7 +443,7 @@ applications:
 
 ---
 applications:
-- name: fortuneService
+- name: fortuneui
   random-route: true
   memory: 512M
   buildpack: https://github.com/cloudfoundry-community/asp.net5-buildpack.git
