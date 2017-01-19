@@ -184,6 +184,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 . Using the skills you picked up from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
+
 === Modify Fortune Teller UI
 
 ==== Step 01 - Modify FortuneController to use the IFortuneService
