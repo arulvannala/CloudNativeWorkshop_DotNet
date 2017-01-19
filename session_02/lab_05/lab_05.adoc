@@ -111,9 +111,9 @@ In future labs we will systematically make the changes necessary to make them a 
 > cd Workshop/Session-02/Lab05/Fortune-Teller-Service
 ----
 Mac/Linux
-Modify project.json
-Comment out legacy dependency in project.json: 
-//"net452": {} 
+
+. Modify project.json. Comment out legacy dependency in project.json: //"net452": {} 
+
 . Restore the nuget dependencies for the application
 +
 ----
