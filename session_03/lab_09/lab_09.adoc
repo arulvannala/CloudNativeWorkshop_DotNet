@@ -10,7 +10,7 @@ If you started with the _FortuneTeller.sln_, and completed Lab 8, you have an ap
 . The ``Fortune Teller Service`` can not scale horizontally, as it uses a backend in-memory datastore to hold Fortunes.
 . The ``Fortune Teller UI`` can not scale horizontally, as its session state (i.e. Users Fortune) gets lost.
 
-The goals for Lab 8 are to:
+The goals for Lab 9 are to:
 
 . Understand ASP.NET Core Session services.
 . Understand ASP.NET Core Data Protection services
