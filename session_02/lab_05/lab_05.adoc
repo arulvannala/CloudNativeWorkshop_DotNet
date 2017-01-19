@@ -125,6 +125,7 @@ Win
 ----
 > rmdir /s /q .\publish
 ----
++
 Mac/Linux
 ----
 > rm -rf publish
@@ -135,6 +136,7 @@ Win
 ----
 > dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o %CD%\publish
 ----
++
 Mac/Linux
 ----
 dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish
@@ -149,6 +151,7 @@ Win
 ----
 > cf push -f manifest.yml -p .\publish
 ----
++
 Mac/Linux
 ----
 > cf push -f manifest.yml -p publish
