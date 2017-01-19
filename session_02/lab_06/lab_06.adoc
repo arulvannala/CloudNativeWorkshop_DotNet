@@ -182,8 +182,19 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 
 ==== Step 05 - Push to Cloud Foundry
 . Using the skills you picked up from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
+
+Win
+
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab05/Fortune-Teller-Service``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
 
 === Modify Fortune Teller UI
 
@@ -230,6 +241,16 @@ public void ConfigureServices(IServiceCollection services)
 
 ==== Step 04 Push to Cloud Foundry
 . Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
+
+Win
+
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab05/Fortune-Teller-UI``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
