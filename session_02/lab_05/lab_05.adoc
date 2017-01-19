@@ -109,7 +109,7 @@ In future labs we will systematically make the changes necessary to make them a 
 +
 ----
 > cd Workshop/Session-02/Lab05/Fortune-Teller-Service
-Mac/Linux
+ Mac/Linux
 Modify project.json
 Comment out legacy dependency in project.json: 
 //"net452": {} 
@@ -125,8 +125,7 @@ Win
 ----
 > rmdir /s /q .\publish
 ----
-+
-Mac/Linux
+ Mac/Linux
 ----
 > rm -rf publish
 ----
@@ -136,8 +135,7 @@ Win
 ----
 > dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o %CD%\publish
 ----
-+
-Mac/Linux
+ Mac/Linux
 ----
 dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish
 ----
@@ -151,7 +149,6 @@ Win
 ----
 > cf push -f manifest.yml -p .\publish
 ----
-+
 Mac/Linux
 ----
 > cf push -f manifest.yml -p publish
