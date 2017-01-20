@@ -326,10 +326,10 @@ applications:
 ----
 . Using the skills you picked from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
 
+
+Follow the steps bellow for both applications...
+
 Pushing Fortune Teller Service
-
-
-Follow the steps bellow...
 
 Win
 

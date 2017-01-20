@@ -537,8 +537,49 @@ applications:
    - myRedisService
 ----
 . Using the skills you picked from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
+
+Follow the steps bellow for both applications...
+
+Pushing Fortune Teller Service
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+Pushing Fortune Teller UI
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+
+Try hitting the ``Fortune Teller UI`` and if it fails to communicate with the ``Fortune Teller Service``.
+make sure fortuneui.yml file us updated as follows "address: fortuneService".
+
 
 === Step 04 - Verify you can scale the Fortune-Teller-UI
 . Using the skills you picked up from Lab 3
