@@ -273,9 +273,16 @@ Make sure you still have an instance of the Config Server service in your org/sp
 .. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
 . Using the command window, create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
 +
+Win
 ----
 > cf create-service p-config-server standard myConfigServer -c .\config-server.json
 ----
+
+Mac/Linux
+----
+> cf create-service p-config-server standard myConfigServer -c config-server.json
+----
+
 . Wait for the service to become available:
 +
 ----
@@ -318,6 +325,46 @@ applications:
 
 ----
 . Using the skills you picked from Lab05, publish and push the components to a Linux cell on Cloud Foundry.
+
+Pushing Fortune Teller Service
+
+
+Follow the steps bellow...
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+Pushing Fortune Teller UI
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+
+Try hitting the ``Fortune Teller UI`` and if it fails to communicate with the ``Fortune Teller Service``.
+make sure fortuneui.yml file us updated as follows "address: fortuneService".
