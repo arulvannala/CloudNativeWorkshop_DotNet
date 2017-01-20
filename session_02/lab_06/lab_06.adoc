@@ -190,7 +190,7 @@ Win
 
 Mac/Linux
 
-.. ``cd Workshop/Session-02/Lab05/Fortune-Teller-Service``
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet restore``
 .. ``dotnet build ``
 .. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
@@ -249,7 +249,7 @@ Win
 
 Mac/Linux
 
-.. ``cd Workshop/Session-02/Lab05/Fortune-Teller-UI``
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
 .. ``dotnet restore``
 .. ``dotnet build ``
 .. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``

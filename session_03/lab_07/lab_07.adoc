@@ -413,9 +413,15 @@ You must first create an instance of the Config Server service in your org/space
 .. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
 . Using the command window, create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
 +
+Win
 ----
 > cf create-service p-config-server standard myConfigServer -c .\config-server.json
 ----
+Mac/Linux
+----
+> cf create-service p-config-server standard myConfigServer -c config-server.json
+----
+
 . Wait for the service to become available:
 +
 ----
@@ -454,11 +460,44 @@ applications:
    - myConfigServer
 ----
 . Using the skills you picked up from Lab05, publish and push both components to a Linux cell on Cloud Foundry.
+
+Pushing Fortune Teller Service
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+Pushing Fortune Teller UI
+
+Win
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+.. ``cf push -f manifest.yml -p .\publish``
+
+Mac/Linux
+
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``dotnet restore``
+.. ``dotnet build ``
+.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+.. ``cf push -f manifest.yml -p publish``
+
+
 
 === Step 03 - Configure for CloudFoundry
 . Try hitting the ``Fortune Teller UI`` and notice that it fails to communicate with the ``Fortune Teller Service``.
 Why -> Remember the ``fortuneService`` configuration is pointing to ``localhost:5000``.
 . Optional: If you're using your own github repo to hold Config Server data, modify the ``fortuneService`` configuration to make it work and restart the UI.
 
+Hint: Check your application URL in the route tab of your application within Pivotal Cloud Foundry apps manager
