@@ -247,7 +247,7 @@ public void ConfigureServices(IServiceCollection services)
 
 Win
 
-.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
 .. ``dotnet restore``
 .. ``dotnet build ``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
