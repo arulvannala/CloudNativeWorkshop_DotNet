@@ -268,6 +268,8 @@ Make sure you still have an instance of the Config Server service in your org/sp
 > e.g cd Workshop\FortuneTeller
 ----
 . Optional: Create your own github repo to hold the Config Server data
+
+.. Optional: Fork github repository https://github.com/SteeltoeOSS/workshop-config-repo
 .. Optional: Open the ``config-server.json`` file in the Solution Items folder.
 .. Optional: Modify it to point to the github repo you just created.
 .. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
