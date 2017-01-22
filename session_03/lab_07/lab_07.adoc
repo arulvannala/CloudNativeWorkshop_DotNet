@@ -465,13 +465,13 @@ Pushing Fortune Teller Service
 
 Win
 
-.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
 Mac/Linux
 
-.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
+.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
 .. ``dotnet restore``
 .. ``dotnet build ``
 .. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
@@ -481,13 +481,13 @@ Pushing Fortune Teller UI
 
 Win
 
-.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
 Mac/Linux
 
-.. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
+.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
 .. ``dotnet restore``
 .. ``dotnet build ``
 .. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
