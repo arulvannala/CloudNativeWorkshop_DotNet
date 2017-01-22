@@ -504,4 +504,6 @@ Mac/Linux
 Why -> Remember the ``fortuneService`` configuration is pointing to ``localhost:5000``.
 . Optional: If you're using your own github repo to hold Config Server data, modify the ``fortuneService`` configuration to make it work and restart the UI.
 
-Hint: Check your application URL in the route tab of your application within Pivotal Cloud Foundry apps manager
+Hint:
+. Check your application URL in the route tab of your application within Pivotal Cloud Foundry apps manager
+. Update fortuneui.yml in https://github.com/mnenad/workshop-config-repo
