@@ -30,6 +30,8 @@ In future labs we will systematically make the changes necessary to make them a 
 . Start Visual Studio 2015 and open the solution _Workshop/Session-02/Lab05.sln_
 .. Set ``Fortune-Teller-Service`` as active project (i.e. Select Project->Right Click->Set As Startup project)
 .. Select  ``Framework`` to be ``.NET 4.5.2``
+.. Right click on a project
+.. Select Publish, follow the wizard and make sure you select the ``.NET 4.5.2`` Target Framework and Target Runtime
 .. Select a ``Hosting environment`` to be ``Fortune_Teller_Service``
 .. Start application (e.g. CTRL-F5 or F5)
 .. Notice command window opens with app running
@@ -45,6 +47,8 @@ In future labs we will systematically make the changes necessary to make them a 
 . Start Visual Studio 2015 and open the solution _Workshop/Session-02/Lab05.sln_
 .. Set ``Fortune-Teller-Service`` as active project (i.e. Select Project->Right Click->Set As Startup project)
 .. Select  ``Framework`` to be ``.NET Core App, 1.1``
+.. Right click on a project
+.. Select Publish, follow the wizard and make sure you select the ``.NET Core App, 1.1`` Target Framework and Target Runtime
 .. Select a ``Hosting environment`` to be ``Fortune_Teller_Service``
 .. Start application (e.g. CTRL-F5 or F5)
 .. Try setting breakpoints in the FortunesController if you're running in the debugger.
@@ -58,6 +62,11 @@ In future labs we will systematically make the changes necessary to make them a 
 . Use the instructions above, but apply them to the Fortune Teller UI.
 
 == Run Fortune Teller Service in Command Window on .NET 4.x
+
+. Make sure the path variable points to bower executable directory
+
+ C:\Program Files\Docker Toolbox;c:\pcf-dev-env-1.0;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Web\External
+
 . Start a command window.
 . Change directory to the ``Fortune Teller Service``
 +
