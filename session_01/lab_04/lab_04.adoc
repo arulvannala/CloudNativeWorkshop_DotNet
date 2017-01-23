@@ -72,7 +72,7 @@ You can try various things like refreshing the browser and triggering stop/start
 
 Cloud Foundry's https://docs.pivotal.io/pivotalcf/1-7/concepts/architecture/#nsync-bbs[components] actively monitors the health of our application processes and will restart them should they crash.
 
-. If you don't have one already running, start a log tail for `workshop`.  Alternatively, you could view the logs using the papertrail app.
+. If you don't have one already running, start a log tail for `env`.
 +
 ----
 > cf logs env

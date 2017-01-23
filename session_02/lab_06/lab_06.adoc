@@ -16,11 +16,11 @@ If you start with #2 above, you will find the app in its current state is not ve
 The goals for Lab 6 are to understand ASP.NET Core programming and to use our skills to hook up two areas of the code:
 
 . In ``Fortune Teller Service``:
-.. Hook up the ``IFortuneRepository`` to the ``FortuneController`` and modify the ``FortuneController`` to use the newly available ``IFortuneRepository``
+.. Hook up the ``IFortuneRepository`` to the ``FortuneController``
 .. Add the ``IFortuneRepository`` and the ``FortuneContext`` to the ASP.NET Core service container.
 .. Initialize the ``FortuneContext`` with some Fortunes.
 . In ``Fortune Teller UI``:
-.. Hook up the ``IFortuneService`` to the ``FortuneController`` and modify the ``FortuneController`` to use the  newly available ``IFortuneService``.
+.. Hook up the ``IFortuneService`` to the ``FortuneController``
 .. Add the ``IFortuneService`` to the ASP.NET Core service container.
 
 For some background information on ASP.NET Core programming, have a look at this https://docs.microsoft.com/en-us/aspnet/core/[documentation].
@@ -183,7 +183,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 ==== Step 05 - Push to Cloud Foundry
 . Using the skills you picked up from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
 
-Win
+If you are using the finished lab code on Windows:
 
 .. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet restore``
@@ -191,7 +191,7 @@ Win
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
-Mac/Linux
+If you are using the finished lab code on Mac/Linux:
 
 .. ``cd Workshop/Session-02/Lab06/Fortune-Teller-Service``
 .. ``dotnet restore``
@@ -245,7 +245,7 @@ public void ConfigureServices(IServiceCollection services)
 ==== Step 04 Push to Cloud Foundry
 . Using the skills you learned from Lab05, publish and push the app to a Linux cell on Cloud Foundry.
 
-Win
+If you are using the finished lab code on Windows:
 
 .. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
 .. ``dotnet restore``
@@ -253,7 +253,7 @@ Win
 .. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
 .. ``cf push -f manifest.yml -p .\publish``
 
-Mac/Linux
+If you are using the finished lab code on Mac/Linux:
 
 .. ``cd Workshop/Session-02/Lab06/Fortune-Teller-UI``
 .. ``dotnet restore``

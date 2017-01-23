@@ -409,19 +409,16 @@ You must first create an instance of the Config Server service in your org/space
 ----
 . Optional: Create your own github repo to hold the Config Server data
 
-.. Optional: Fork github repository https://github.com/SteeltoeOSS/workshop-config-repo
-.. Optional: Open the ``config-server.json`` file in the Solution Items folder.
-.. Optional: Modify it to point to the github repo you just forked.
-.. Optional: Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
+.. Fork github repository https://github.com/SteeltoeOSS/workshop-config-repo
+.. Open the ``config-server.json`` file in the Solution Items folder.
+.. Modify it to point to the github repo you just forked.
+.. Add the contents of _c:/steeltoe/config-repo_ to the github repo you just created
 . Using the command window, create an instance of the config server and set its configuration up with a github repo referenced in the config-server.json file:
 +
-Win
 ----
-> cf create-service p-config-server standard myConfigServer -c .\config-server.json
-----
-Mac/Linux
-----
-> cf create-service p-config-server standard myConfigServer -c config-server.json
+> Windows: cf create-service p-config-server standard myConfigServer -c .\config-server.json
+
+> Mac/Linux: cf create-service p-config-server standard myConfigServer -c config-server.json
 ----
 
 . Wait for the service to become available:
@@ -462,42 +459,30 @@ applications:
    - myConfigServer
 ----
 . Using the skills you picked up from Lab05, publish and push both components to a Linux cell on Cloud Foundry.
-
-Pushing Fortune Teller Service
-
-Win
-
-.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
-.. ``dotnet restore``
-.. ``dotnet build ``
-.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
-.. ``cf push -f manifest.yml -p .\publish``
-
-Mac/Linux
-
-.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
-.. ``dotnet restore``
-.. ``dotnet build ``
-.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
-.. ``cf push -f manifest.yml -p publish``
-
-Pushing Fortune Teller UI
-
-Win
-
-.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
-.. ``dotnet restore``
-.. ``dotnet build ``
-.. ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
-.. ``cf push -f manifest.yml -p .\publish``
-
-Mac/Linux
-
-.. ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
-.. ``dotnet restore``
-.. ``dotnet build ``
-.. ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
-.. ``cf push -f manifest.yml -p publish``
+.. Pushing Fortune Teller Service - If you are using the finished lab code on Windows:
+... ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
+... ``dotnet restore``
+... ``dotnet build ``
+... ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+... ``cf push -f manifest.yml -p .\publish``
+.. Pushing Fortune Teller Service - If you are using the finished lab code on Mac/Linux:
+... ``cd Workshop/Session-02/Lab07/Fortune-Teller-Service``
+... ``dotnet restore``
+... ``dotnet build ``
+... ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+... ``cf push -f manifest.yml -p publish``
+.. Pushing Fortune Teller UI - If you are using the finished lab code on Windows:
+... ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
+... ``dotnet restore``
+... ``dotnet build ``
+... ``dotnet publish -o %CD%\publish -f netcoreapp1.1 -r ubuntu.14.04-x64``
+... ``cf push -f manifest.yml -p .\publish``
+.. Pushing Fortune Teller UI - If you are using the finished lab code on Mac/Linux:
+... ``cd Workshop/Session-02/Lab07/Fortune-Teller-UI``
+... ``dotnet restore``
+... ``dotnet build ``
+... ``dotnet publish -f netcoreapp1.1 -r ubuntu.14.04-x64 -o $cd\publish``
+... ``cf push -f manifest.yml -p publish``
 
 
 
@@ -505,9 +490,7 @@ Mac/Linux
 . Try hitting the ``Fortune Teller UI`` and notice that it fails to communicate with the ``Fortune Teller Service``.
 Why -> Remember the ``fortuneService`` configuration is pointing to ``localhost:5000``.
 . Optional: If you're using your own github repo to hold Config Server data, modify the ``fortuneService`` configuration to make it work and restart the UI.
+Some hints:
+.. Check the application fortuneService URL in the Route tab within Pivotal Cloud Foundry apps manager
 
-Hints:
-
-. Check the application fortuneService URL in the Route tab within Pivotal Cloud Foundry apps manager
-
-. Update fortuneui.yml in https://github.com/<github username>/workshop-config-repo and restart fortuneui application
+.. Update fortuneui.yml in https://github.com/<github username>/workshop-config-repo and restart fortuneui application
