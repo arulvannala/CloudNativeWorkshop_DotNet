@@ -59,6 +59,9 @@ In future labs we will systematically make the changes necessary to make them a 
 .. Use browser to hit the REST endpoint.
 
 == Run Fortune Teller UI in VS2015, both on .NET 4.x and .NET Core
+
+Hint: Shutdown Fortune Service before proceeding
+
 . Use the instructions above, but apply them to the Fortune Teller UI.
 
 == Run Fortune Teller Service in Command Window on .NET 4.x
